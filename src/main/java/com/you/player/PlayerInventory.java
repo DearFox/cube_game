@@ -1,0 +1,79 @@
+package com.you.player;
+
+import com.you.world.Blocks;
+import com.you.world.ItemStack;
+import com.you.world.BlockData;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PlayerInventory {
+
+    public final ItemStack[] hotbar = new ItemStack[9];
+    private int selectedSlot = 0;
+
+    // creative entries (list of packed shorts you can select from)
+    // for now we populate with one entry per kind (state=0)
+    private final List<Short> creativeEntries = new ArrayList<>();
+
+    // whether creative mode is enabled (infinite stacks / fill hotbar on click)
+    private boolean creativeMode = false;
+
+    public PlayerInventory() {
+        // init empty
+        for (int i = 0; i < hotbar.length; i++) hotbar[i] = ItemStack.empty();
+
+        // example starting hotbar: grass in slot 0
+        hotbar[0] = new ItemStack(Blocks.GRASS, 64);
+        hotbar[1] = new ItemStack(Blocks.DIRT, 64);
+        hotbar[2] = new ItemStack(Blocks.STONE, 64);
+        hotbar[3] = new ItemStack(Blocks.GLASS, 64);
+        // rest left empty
+
+        // populate creative palette (kinds only, state 0)
+        // Blocks.getKind() registry is expected to hold kinds; we add known kinds:
+        // NOTE: if you maintain dynamic registration, replace the following with a registry walk.
+        creativeEntries.add(Blocks.GRASS);
+        creativeEntries.add(Blocks.DIRT);
+        creativeEntries.add(Blocks.STONE);
+        creativeEntries.add(Blocks.GLASS);
+        // add glow if desired
+        // creativeEntries.add(Blocks.GLOW);
+    }
+
+    public ItemStack getSelected() {
+        return hotbar[selectedSlot];
+    }
+
+    public int getSelectedSlot() { return selectedSlot; }
+    public void setSelectedSlot(int s) {
+        if (s < 0) s = 0;
+        if (s >= hotbar.length) s = hotbar.length - 1;
+        selectedSlot = s;
+    }
+
+    public void cycleSelected(int delta) {
+        int n = hotbar.length;
+        selectedSlot = (selectedSlot + delta) % n;
+        if (selectedSlot < 0) selectedSlot += n;
+    }
+
+    public List<Short> getCreativeEntries() { return creativeEntries; }
+
+    public boolean isCreativeMode() { return creativeMode; }
+    public void setCreativeMode(boolean v) { creativeMode = v; }
+
+    public void placeOneFromSelected() {
+        if (creativeMode) return; // infinite
+        ItemStack s = hotbar[selectedSlot];
+        if (s != null && !s.isEmpty()) {
+            s.decrement();
+            if (s.isEmpty()) hotbar[selectedSlot] = ItemStack.empty();
+        }
+    }
+
+    public void setSlot(int slot, short packed, int count) {
+        if (slot < 0 || slot >= hotbar.length) return;
+        hotbar[slot] = new ItemStack(packed, count);
+    }
+}
