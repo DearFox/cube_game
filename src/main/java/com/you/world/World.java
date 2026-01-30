@@ -166,9 +166,9 @@ public class World {
                 for (int y = h - 1; y >= h - 3; y--) setBlock(x, y, z, Blocks.DIRT);
                 for (int y = h - 4; y >= -16; y--) setBlock(x, y, z, Blocks.STONE);
 
-                if ((Math.abs(x * 17 + z * 59) % 23) < 3) {
+              /*  if ((Math.abs(x * 17 + z * 59) % 23) < 3) {
                     setBlock(x, h + 1, z, Blocks.STONE);
-                }
+                }*/
             }
         }
     }

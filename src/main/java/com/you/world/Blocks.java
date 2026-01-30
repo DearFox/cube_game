@@ -8,7 +8,8 @@ public class Blocks {
     public static final int DIRT_KIND  = 2;
     public static final int STONE_KIND = 3;
     public static final int GLASS_KIND = 4;
-    public static final int GLOW_KIND  = 5; // example glow block
+    public static final int STONEBRICK_KIND = 5;
+    public static final int SAND_KIND = 6;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -16,7 +17,8 @@ public class Blocks {
     public static final short DIRT  = BlockData.pack(DIRT_KIND, 0);
     public static final short STONE = BlockData.pack(STONE_KIND, 0);
     public static final short GLASS = BlockData.pack(GLASS_KIND, 0);
-    public static final short GLOW  = BlockData.pack(GLOW_KIND, 0);
+    public static final short STONEBRICK = BlockData.pack(STONEBRICK_KIND, 0);
+    public static final short SAND = BlockData.pack(SAND_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -58,9 +60,11 @@ public class Blocks {
         register(new BlockType(GLASS_KIND, "glass", true,
                 2,2,  2,2,  2,2,  2,2,  2,2,  2,2
         ));
-
-        register(new BlockType(GLOW_KIND, "glow", true,
+        register(new BlockType(STONEBRICK_KIND, "stone brick", true,
                 3,2,  3,2,  3,2,  3,2,  3,2,  3,2
+        ));
+        register(new BlockType(SAND_KIND, "sand", true,
+                0,1,  0,1,  0,1,  0,1,  0,1,  0,1
         ));
     }
 
@@ -88,7 +92,7 @@ public class Blocks {
     // emission 0..15
     public static int emission(short packed) {
         int kind = BlockData.kind(packed);
-        if (kind == GLOW_KIND) return 15;
+        //if (kind == GLOW_KIND) return 15;
         return 0;
     }
 

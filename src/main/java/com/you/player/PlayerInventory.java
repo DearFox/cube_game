@@ -28,6 +28,8 @@ public class PlayerInventory {
         hotbar[1] = new ItemStack(Blocks.DIRT, 64);
         hotbar[2] = new ItemStack(Blocks.STONE, 64);
         hotbar[3] = new ItemStack(Blocks.GLASS, 64);
+        hotbar[4] = new ItemStack(Blocks.STONEBRICK, 64);
+        hotbar[5] = new ItemStack(Blocks.SAND, 64);
         // rest left empty
 
         // populate creative palette (kinds only, state 0)
