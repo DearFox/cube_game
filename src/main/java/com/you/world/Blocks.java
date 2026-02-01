@@ -12,6 +12,8 @@ public class Blocks {
     public static final int SAND_KIND = 6;
     public static final int MOSSYCOBBLE_KIND = 7;
     public static final int MOSSYSTONEBRICK_KIND = 8;
+    public static final int PLANT_GRASS_KIND = 9;
+    public static final int PLANT_TRITELEIA_KIND = 10;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -23,6 +25,8 @@ public class Blocks {
     public static final short SAND = BlockData.pack(SAND_KIND, 0);
     public static final short MOSSYCOBBLE = BlockData.pack(MOSSYCOBBLE_KIND, 0);
     public static final short MOSSYSTONEBRICK = BlockData.pack(MOSSYSTONEBRICK_KIND, 0);
+    public static final short PLANT_GRASS = BlockData.pack(PLANT_GRASS_KIND, 0);
+    public static final short PLANT_TRITELEIA = BlockData.pack(PLANT_TRITELEIA_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -76,6 +80,12 @@ public class Blocks {
         register(new BlockType(MOSSYSTONEBRICK_KIND, "mossy stone brick", true,
                 2,1,  2,1,  2,1,  2,1,  2,1,  2,1
         ));
+        register(new BlockType(PLANT_GRASS_KIND, "grass", true,
+                3,1,  3,1,  3,1,  3,1,  3,1,  3,1
+        ));
+        register(new BlockType(PLANT_TRITELEIA_KIND, "triplet lily", true,
+                0,0,  0,0,  0,0,  0,0,  0,0,  0,0
+        ));
     }
 
     private static void register(BlockType t) {
@@ -88,6 +98,9 @@ public class Blocks {
 
     public static boolean isSolid(short packed) {
         BlockType t = get(packed);
+        int kind = BlockData.kind(packed);
+        if (kind == PLANT_GRASS_KIND) return false;
+        if (kind == PLANT_TRITELEIA_KIND) return false;
         return t != null && t.solid();
     }
 
@@ -96,6 +109,8 @@ public class Blocks {
         int kind = BlockData.kind(packed);
         if (kind == AIR_KIND) return 0;
         if (kind == GLASS_KIND) return 0; // glass considered non-opaque for lighting/face-culling rules
+        if (kind == PLANT_GRASS_KIND) return 0;
+        if (kind == PLANT_TRITELEIA_KIND) return 0;
         return 15;
     }
 
@@ -109,10 +124,6 @@ public class Blocks {
     // helpers about render classification
     public static boolean isTransparent(short packed) {
         return BlockData.kind(packed) != AIR_KIND && !isOpaque(packed);
-    }
-
-    public static boolean isCutout(short packed) {
-        return BlockData.kind(packed) == GLASS_KIND; // binary alpha
     }
 
     public static boolean isTranslucent(short packed) {
@@ -130,5 +141,17 @@ public class Blocks {
 
     public static boolean isRenderable(short packed) {
         return BlockData.kind(packed) != AIR_KIND;
+    }
+    
+    public static boolean isPlant(short packed) {
+        int k = BlockData.kind(packed);
+        if (k== PLANT_GRASS_KIND) return true;
+        if (k== PLANT_TRITELEIA_KIND) return true;
+        return false;
+    }
+
+    public static boolean isCutout(short packed) {
+        int k = BlockData.kind(packed);
+        return k == GLASS_KIND || isPlant(packed);
     }
 }

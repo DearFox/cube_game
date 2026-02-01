@@ -79,14 +79,15 @@ public class Renderer {
 		for (Chunk c : world.getChunks()) {
 			if (!c.dirty)
 				continue;
-			Mesher.MeshPair pair = mesher.buildChunkMeshes(world, c, atlas.width(), atlas.height(), tileSizePx);
-			uploadOrUpdate(c.pos, pair.opaque, pair.transparent);
+			Mesher.MeshTriple tri = mesher.buildChunkMeshes(world, c, atlas.width(), atlas.height(), tileSizePx);
+			uploadOrUpdate(c.pos, tri.opaque, tri.cutout, tri.transparent);
 			c.dirty = false;
 		}
 
 		// -------------------------
-		// PASS 1: SOLID (opaque + cutout glass)
+		// PASS 1: SOLID (opaque + cutout glass) 
 		// -------------------------
+		//TODO put glass back here
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, fbw, fbh);
 
@@ -115,6 +116,40 @@ public class Renderer {
 			glDrawArrays(GL_TRIANGLES, 0, m.countOpaque);
 		}
 		glBindVertexArray(0);
+		
+		// -------------------------
+		// PASS 1.5: CUTOUT (alpha test, writes depth, no blending, no culling)
+		// For: plants, cutout glass, leaves, etc.
+		// -------------------------
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(true);
+
+		// IMPORTANT: disable culling so cross-plants render from all angles
+		glDisable(GL_CULL_FACE);
+
+		// same shader + same atlas; your basic.frag already does alpha discard
+		shader.use();
+		atlas.bind(0);
+		shader.setInt("uTex", 0);
+
+		shader.setMat4("uViewProj", viewProj);
+		shader.setMat4("uModel", new Matrix4f().identity());
+		shader.setVec3("uLightDir", lightX, lightY, lightZ);
+		shader.setVec3("uAmbient", ambX, ambY, ambZ);
+		shader.setVec3("uColor", 1f, 1f, 1f);
+
+		for (Chunk c : world.getChunks()) {
+		    ChunkMeshGpu m = gpu.get(c.pos);
+		    if (m == null || m.countCutout == 0) continue;
+		    glBindVertexArray(m.vaoCutout);
+		    glDrawArrays(GL_TRIANGLES, 0, m.countCutout);
+		}
+		glBindVertexArray(0);
+
+		// restore culling state for later passes (optional; your translucent pass disables it anyway)
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 
 		// If you currently draw HUD later, keep that after composite.
 
@@ -173,40 +208,49 @@ public class Renderer {
 		}
 	}
 
-	private void uploadOrUpdate(ChunkPos pos, float[] opaque, float[] trans) {
-		// Never allow null arrays
-		if (opaque == null)
-			opaque = new float[0];
-		if (trans == null)
-			trans = new float[0];
+	private void uploadOrUpdate(ChunkPos pos, float[] opaque, float[] cutout, float[] trans) {
+	    // Never allow null arrays
+	    if (opaque == null) opaque = new float[0];
+	    if (cutout == null) cutout = new float[0];
+	    if (trans == null) trans = new float[0];
 
-		ChunkMeshGpu m = gpu.get(pos);
-		if (m == null) {
-			m = new ChunkMeshGpu();
-			gpu.put(pos, m);
+	    ChunkMeshGpu m = gpu.get(pos);
+	    if (m == null) {
+	        m = new ChunkMeshGpu();
+	        gpu.put(pos, m);
 
-			// --- opaque VAO/VBO ---
-			m.vaoOpaque = glGenVertexArrays();
-			m.vboOpaque = glGenBuffers();
-			setupVao(m.vaoOpaque, m.vboOpaque);
+	        // --- opaque VAO/VBO ---
+	        m.vaoOpaque = glGenVertexArrays();
+	        m.vboOpaque = glGenBuffers();
+	        setupVao(m.vaoOpaque, m.vboOpaque);
 
-			// --- translucent VAO/VBO ---
-			m.vaoTrans = glGenVertexArrays();
-			m.vboTrans = glGenBuffers();
-			setupVao(m.vaoTrans, m.vboTrans);
-		}
+	        // --- cutout VAO/VBO ---
+	        m.vaoCutout = glGenVertexArrays();
+	        m.vboCutout = glGenBuffers();
+	        setupVao(m.vaoCutout, m.vboCutout);
 
-		// Upload opaque data
-		glBindBuffer(GL_ARRAY_BUFFER, m.vboOpaque);
-		glBufferData(GL_ARRAY_BUFFER, opaque, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		m.countOpaque = opaque.length / FLOATS_PER_VERT;
+	        // --- translucent VAO/VBO ---
+	        m.vaoTrans = glGenVertexArrays();
+	        m.vboTrans = glGenBuffers();
+	        setupVao(m.vaoTrans, m.vboTrans);
+	    }
 
-		// Upload translucent data
-		glBindBuffer(GL_ARRAY_BUFFER, m.vboTrans);
-		glBufferData(GL_ARRAY_BUFFER, trans, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		m.countTrans = trans.length / FLOATS_PER_VERT;
+	    // Upload opaque
+	    glBindBuffer(GL_ARRAY_BUFFER, m.vboOpaque);
+	    glBufferData(GL_ARRAY_BUFFER, opaque, GL_STATIC_DRAW);
+	    m.countOpaque = opaque.length / FLOATS_PER_VERT;
+
+	    // Upload cutout
+	    glBindBuffer(GL_ARRAY_BUFFER, m.vboCutout);
+	    glBufferData(GL_ARRAY_BUFFER, cutout, GL_STATIC_DRAW);
+	    m.countCutout = cutout.length / FLOATS_PER_VERT;
+
+	    // Upload translucent
+	    glBindBuffer(GL_ARRAY_BUFFER, m.vboTrans);
+	    glBufferData(GL_ARRAY_BUFFER, trans, GL_STATIC_DRAW);
+	    m.countTrans = trans.length / FLOATS_PER_VERT;
+
+	    glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	private void setupVao(int vao, int vbo) {

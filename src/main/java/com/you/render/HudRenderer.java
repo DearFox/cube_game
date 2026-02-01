@@ -130,7 +130,8 @@ public class HudRenderer {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// Draw crosshair (keeps its own scissor behavior)
-		drawCrosshair(fbw, fbh);
+		//TODO is this neccessary with the drawcrosshair below?
+		drawCrosshair(fbw, fbh); 	
 		glCheck("HUD after crosshair");
 
 		if (inventoryOpen) {
@@ -223,8 +224,8 @@ public class HudRenderer {
 			float x1 = sx + slotSize;
 			float y1 = y + slotSize;
 
-			float[] verts = new float[] { x0, y0, u0, v0, x1, y1, u1, v1, x1, y0, u1, v0, x0, y0, u0, v0, x0, y1, u0,
-					v1, x1, y1, u1, v1 };
+			float[] verts = new float[] { x0, y0, u0, v1, x1, y1, u1, v0, x1, y0, u1, v1, x0, y0, u0, v1, x0, y1, u0,
+					v0, x1, y1, u1, v0 };
 
 			try (MemoryStack ms = MemoryStack.stackPush()) {
 				FloatBuffer fbuff = ms.mallocFloat(verts.length);
@@ -549,8 +550,11 @@ public class HudRenderer {
 
 			float x0 = x, y0 = y, x1 = x + creativeCell, y1 = y + creativeCell;
 
+			float[] verts = new float[] { x0, y0, u0, v1, x1, y1, u1, v0, x1, y0, u1, v1, x0, y0, u0, v1, x0, y1, u0,
+					v0, x1, y1, u1, v0 };
+			/*
 			float[] verts = new float[] { x0, y0, u0, v0, x1, y1, u1, v1, x1, y0, u1, v0, x0, y0, u0, v0, x0, y1, u0,
-					v1, x1, y1, u1, v1 };
+					v1, x1, y1, u1, v1 };*/
 
 			try (MemoryStack ms = MemoryStack.stackPush()) {
 				FloatBuffer fbuff = ms.mallocFloat(verts.length);
