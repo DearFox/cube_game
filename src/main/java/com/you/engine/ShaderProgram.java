@@ -102,6 +102,15 @@ public class ShaderProgram {
             glUniform2f(loc, x, y);
         }
     }
+    public void setVec4(String name, float x, float y, float z, float w) {
+        int loc = org.lwjgl.opengl.GL20.glGetUniformLocation(programId, name);
+        if (loc != -1) {
+            org.lwjgl.opengl.GL20.glUniform4f(loc, x, y, z, w);
+        } else {
+            // Optional: debug print if you want to catch missing/unused uniforms
+            // System.err.println("Warning: uniform '" + name + "' not found in shader " + programId);
+        }
+    }
 
 }
 

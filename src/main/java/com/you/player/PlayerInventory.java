@@ -17,7 +17,7 @@ public class PlayerInventory {
     private final List<Short> creativeEntries = new ArrayList<>();
 
     // whether creative mode is enabled (infinite stacks / fill hotbar on click)
-    private boolean creativeMode = false;
+    private boolean creativeMode = true;
 
     public PlayerInventory() {
         // init empty
@@ -39,6 +39,10 @@ public class PlayerInventory {
         creativeEntries.add(Blocks.DIRT);
         creativeEntries.add(Blocks.STONE);
         creativeEntries.add(Blocks.GLASS);
+        creativeEntries.add(Blocks.STONEBRICK);
+        creativeEntries.add(Blocks.SAND);
+        creativeEntries.add(Blocks.MOSSYCOBBLE);
+        creativeEntries.add(Blocks.MOSSYSTONEBRICK);
         // add glow if desired
         // creativeEntries.add(Blocks.GLOW);
     }

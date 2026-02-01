@@ -10,6 +10,8 @@ public class Blocks {
     public static final int GLASS_KIND = 4;
     public static final int STONEBRICK_KIND = 5;
     public static final int SAND_KIND = 6;
+    public static final int MOSSYCOBBLE_KIND = 7;
+    public static final int MOSSYSTONEBRICK_KIND = 8;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -19,6 +21,8 @@ public class Blocks {
     public static final short GLASS = BlockData.pack(GLASS_KIND, 0);
     public static final short STONEBRICK = BlockData.pack(STONEBRICK_KIND, 0);
     public static final short SAND = BlockData.pack(SAND_KIND, 0);
+    public static final short MOSSYCOBBLE = BlockData.pack(MOSSYCOBBLE_KIND, 0);
+    public static final short MOSSYSTONEBRICK = BlockData.pack(MOSSYSTONEBRICK_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -65,6 +69,12 @@ public class Blocks {
         ));
         register(new BlockType(SAND_KIND, "sand", true,
                 0,1,  0,1,  0,1,  0,1,  0,1,  0,1
+        ));
+        register(new BlockType(MOSSYCOBBLE_KIND, "mossy cobblestone", true,
+                1,1,  1,1,  1,1,  1,1,  1,1,  1,1
+        ));
+        register(new BlockType(MOSSYSTONEBRICK_KIND, "mossy stone brick", true,
+                2,1,  2,1,  2,1,  2,1,  2,1,  2,1
         ));
     }
 

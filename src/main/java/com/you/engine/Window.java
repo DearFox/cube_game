@@ -10,6 +10,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL33.glViewport;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 
 public class Window {
 
@@ -133,10 +134,27 @@ public class Window {
 	 */
 
 	public void destroy() {
-		glfwDestroyWindow(handle);
-		glfwTerminate();
-		var cb = glfwSetErrorCallback(null);
-		if (cb != null)
-			cb.free();
+	    if (handle != 0) {
+	        glfwFreeCallbacks(handle);     // IMPORTANT: frees cursor/key/framebuffer callbacks, etc.
+	        glfwSetCursorPosCallback(handle, null);
+	        glfwSetKeyCallback(handle, null);
+	        glfwSetFramebufferSizeCallback(handle, null);
+	        glfwDestroyWindow(handle);
+	        handle = 0;
+	    }
+
+	    glfwTerminate();
+
+	    var cb = glfwSetErrorCallback(null);
+	    if (cb != null) cb.free();
+	}
+	
+	public int[] windowSize() {
+	    try (var stack = org.lwjgl.system.MemoryStack.stackPush()) {
+	        var w = stack.mallocInt(1);
+	        var h = stack.mallocInt(1);
+	        org.lwjgl.glfw.GLFW.glfwGetWindowSize(handle, w, h);
+	        return new int[]{ w.get(0), h.get(0) };
+	    }
 	}
 }
