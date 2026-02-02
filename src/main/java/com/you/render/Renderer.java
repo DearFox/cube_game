@@ -126,7 +126,7 @@ public class Renderer {
 		glDepthMask(true);
 
 		// IMPORTANT: disable culling so cross-plants render from all angles
-		glDisable(GL_CULL_FACE);
+		//glDisable(GL_CULL_FACE);
 
 		// same shader + same atlas; your basic.frag already does alpha discard
 		shader.use();
