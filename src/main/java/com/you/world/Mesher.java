@@ -291,11 +291,9 @@ public class Mesher {
 		float invLen = 0.70710677f; // 1/sqrt(2)
 
 		// Plane A normal ~ (1,0,1)
-		//emitQuadDoubleSided(out, a0, a1, a2, a3, 1f * invLen, 0f, 1f * invLen, u0, v0, u1, v1, light01);
 		emitQuadTwoSidedSameNormal(out, a0,a1,a2,a3,  1f*invLen, 0.6f,  1f*invLen,  u0,v0,u1,v1, light01);
 
 		// Plane B normal ~ (1,0,-1)
-		//emitQuadDoubleSided(out, b0, b1, b2, b3, 1f * invLen, 0f, -1f * invLen, u0, v0, u1, v1, light01);
 		emitQuadTwoSidedSameNormal(out, b0,b1,b2,b3,  1f*invLen, 0.6f, -1f*invLen,  u0,v0,u1,v1, light01);
 	}
 

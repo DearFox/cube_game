@@ -155,25 +155,31 @@ public class Game {
 		}
 
 		if (input.mouseJustPressedRight()) {
-			RayHit hit = raycast.raycast(world, camera.getPosition(), camera.getForward(), maxDist);
-			if (hit.hit) {
-				if (!world.isSolidBlock(hit.placeX, hit.placeY, hit.placeZ) && !physics
-						.aabbIntersectsBlock(player.getPos(), player.getHalf(), hit.placeX, hit.placeY, hit.placeZ)) {
+		    RayHit hit = raycast.raycast(world, camera.getPosition(), camera.getForward(), maxDist);
+		    if (hit.hit) {
 
-					// place block from selected hotbar
-					ItemStack sel = player.getInventory().getSelected();
-					short toPlace = sel == null ? Blocks.AIR : sel.packed;
-					if (toPlace != Blocks.AIR) {
-						short old = world.setBlockReturningOld(hit.placeX, hit.placeY, hit.placeZ, toPlace);
-						lighting.onBlockChanged(world, hit.placeX, hit.placeY, hit.placeZ, old, toPlace);
+		        // Decide where to place:
+		        // - replace plants/non-solid blocks directly
+		        // - otherwise place adjacent (classic)
+		        int tx = hit.placeX, ty = hit.placeY, tz = hit.placeZ;
+		        short hitBlock = world.getBlock(hit.hitX, hit.hitY, hit.hitZ);
+		        
+		        short hb = world.getBlock(hit.hitX, hit.hitY, hit.hitZ);
+		        System.out.println("hit kind=" + BlockData.kind(hb) + " bt=" + Blocks.get(hb));
+		        
+		        if (Blocks.isReplaceable(hitBlock)) {
+		            tx = hit.hitX; ty = hit.hitY; tz = hit.hitZ;
+		        }
 
-						// decrease stack if not creative
-						player.getInventory().placeOneFromSelected();
+		        if (!world.isSolidBlock(tx, ty, tz) &&
+		            !physics.aabbIntersectsBlock(player.getPos(), player.getHalf(), tx, ty, tz)) {
 
-						world.markDirtyAtBlock(hit.placeX, hit.placeY, hit.placeZ);
-					}
-				}
-			}
+		            short place = player.getInventory().getSelected().packed; // or Blocks.GRASS for now
+		            short old = world.setBlockReturningOld(tx, ty, tz, place);
+		            lighting.onBlockChanged(world, tx, ty, tz, old, place);
+		            world.markDirtyAtBlock(tx, ty, tz);
+		        }
+		    }
 		}
 
 	}

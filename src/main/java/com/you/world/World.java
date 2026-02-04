@@ -14,7 +14,7 @@ public class World {
     public boolean isSolidBlock(int bx, int by, int bz) {
         return Blocks.isSolid(getBlock(bx, by, bz));
     }
-
+    
     // returns packed short (kind+state). If chunk missing => AIR
     public short getBlock(int bx, int by, int bz) {
         int cx = floorDiv(bx, Chunk.CHUNK_SIZE);

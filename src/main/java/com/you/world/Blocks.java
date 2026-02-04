@@ -154,4 +154,14 @@ public class Blocks {
         int k = BlockData.kind(packed);
         return k == GLASS_KIND || isPlant(packed);
     }
+    
+    public static boolean isHittable(short packed) {
+        // Anything that isn't air can be targeted by the ray (plants, glass, etc.)
+        return BlockData.kind(packed) != AIR_KIND;
+    }
+    
+    public static boolean isReplaceable(short packed) {
+        int kind = BlockData.kind(packed);
+        return kind == PLANT_GRASS_KIND;
+    }
 }

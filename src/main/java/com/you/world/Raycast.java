@@ -53,7 +53,8 @@ public class Raycast {
         for (int i = 0; i < 512 && t <= maxDist; i++) {
             int bx = x, by = y, bz = z;
 
-            if (world.isSolidBlock(bx, by, bz)) {
+           // if (world.isSolidBlock(bx, by, bz)) {
+           if (Blocks.isHittable(world.getBlock(bx, by, bz))) {
                 res.hit = true;
                 res.hitX = bx; res.hitY = by; res.hitZ = bz;
                 res.placeX = lastX; res.placeY = lastY; res.placeZ = lastZ;
