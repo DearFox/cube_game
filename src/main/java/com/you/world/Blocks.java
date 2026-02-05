@@ -14,6 +14,8 @@ public class Blocks {
     public static final int MOSSYSTONEBRICK_KIND = 8;
     public static final int PLANT_GRASS_KIND = 9;
     public static final int PLANT_TRITELEIA_KIND = 10;
+    public static final int MUSHROOM_RED_KIND = 11;
+    public static final int MUSHROOM_BROWN_KIND = 12;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -27,6 +29,8 @@ public class Blocks {
     public static final short MOSSYSTONEBRICK = BlockData.pack(MOSSYSTONEBRICK_KIND, 0);
     public static final short PLANT_GRASS = BlockData.pack(PLANT_GRASS_KIND, 0);
     public static final short PLANT_TRITELEIA = BlockData.pack(PLANT_TRITELEIA_KIND, 0);
+    public static final short MUSHROOM_RED = BlockData.pack(MUSHROOM_RED_KIND, 0);
+    public static final short MUSHROOM_BROWN = BlockData.pack(MUSHROOM_BROWN_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -80,11 +84,17 @@ public class Blocks {
         register(new BlockType(MOSSYSTONEBRICK_KIND, "mossy stone brick", true,
                 2,1,  2,1,  2,1,  2,1,  2,1,  2,1
         ));
-        register(new BlockType(PLANT_GRASS_KIND, "grass", true,
+        register(new BlockType(PLANT_GRASS_KIND, "grass", false,
                 3,1,  3,1,  3,1,  3,1,  3,1,  3,1
         ));
-        register(new BlockType(PLANT_TRITELEIA_KIND, "triplet lily", true,
+        register(new BlockType(PLANT_TRITELEIA_KIND, "triplet lily", false,
                 0,0,  0,0,  0,0,  0,0,  0,0,  0,0
+        ));
+        register(new BlockType(MUSHROOM_RED_KIND, "red mushroom", false,
+                1,0,  1,0,  1,0,  1,0,  1,0,  1,0
+        ));
+        register(new BlockType(MUSHROOM_BROWN_KIND, "brown mushroom", false,
+                2,0,  2,0,  2,0,  2,0,  2,0,  2,0
         ));
     }
 
@@ -111,6 +121,8 @@ public class Blocks {
         if (kind == GLASS_KIND) return 0; // glass considered non-opaque for lighting/face-culling rules
         if (kind == PLANT_GRASS_KIND) return 0;
         if (kind == PLANT_TRITELEIA_KIND) return 0;
+        if (kind == MUSHROOM_RED_KIND) return 0;
+        if (kind == MUSHROOM_BROWN_KIND) return 0;
         return 15;
     }
 
@@ -147,6 +159,8 @@ public class Blocks {
         int k = BlockData.kind(packed);
         if (k== PLANT_GRASS_KIND) return true;
         if (k== PLANT_TRITELEIA_KIND) return true;
+        if (k== MUSHROOM_RED_KIND) return true;
+        if (k== MUSHROOM_BROWN_KIND) return true;
         return false;
     }
 

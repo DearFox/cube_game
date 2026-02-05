@@ -164,9 +164,6 @@ public class Game {
 		        int tx = hit.placeX, ty = hit.placeY, tz = hit.placeZ;
 		        short hitBlock = world.getBlock(hit.hitX, hit.hitY, hit.hitZ);
 		        
-		        short hb = world.getBlock(hit.hitX, hit.hitY, hit.hitZ);
-		        System.out.println("hit kind=" + BlockData.kind(hb) + " bt=" + Blocks.get(hb));
-		        
 		        if (Blocks.isReplaceable(hitBlock)) {
 		            tx = hit.hitX; ty = hit.hitY; tz = hit.hitZ;
 		        }

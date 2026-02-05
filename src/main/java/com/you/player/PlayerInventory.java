@@ -45,8 +45,8 @@ public class PlayerInventory {
         creativeEntries.add(Blocks.MOSSYSTONEBRICK);
         creativeEntries.add(Blocks.PLANT_GRASS);
         creativeEntries.add(Blocks.PLANT_TRITELEIA);
-        // add glow if desired
-        // creativeEntries.add(Blocks.GLOW);
+        creativeEntries.add(Blocks.MUSHROOM_RED);
+        creativeEntries.add(Blocks.MUSHROOM_BROWN);
     }
 
     public ItemStack getSelected() {
