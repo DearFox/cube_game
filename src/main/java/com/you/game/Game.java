@@ -171,10 +171,16 @@ public class Game {
 		        if (!world.isSolidBlock(tx, ty, tz) &&
 		            !physics.aabbIntersectsBlock(player.getPos(), player.getHalf(), tx, ty, tz)) {
 
-		            short place = player.getInventory().getSelected().packed; // or Blocks.GRASS for now
-		            short old = world.setBlockReturningOld(tx, ty, tz, place);
-		            lighting.onBlockChanged(world, tx, ty, tz, old, place);
-		            world.markDirtyAtBlock(tx, ty, tz);
+		            short place = player.getInventory().getSelected().packed;
+		            short below = world.getBlock(tx, ty-1, tz);
+		            //check if block is (plant and being placed on a valid block) or (not a plant) and therefore all placements are valid
+		            //TODO Add a method to blocks that takes selected block + block it's being placed onto and returns whether it's a valid placement
+		            if ((Blocks.isPlant(place) && Blocks.canPlantGrowOn(below)) || !Blocks.isPlant(place)) {
+		            	short old = world.setBlockReturningOld(tx, ty, tz, place);
+			            lighting.onBlockChanged(world, tx, ty, tz, old, place);
+			            world.markDirtyAtBlock(tx, ty, tz);
+		            }
+		            
 		        }
 		    }
 		}

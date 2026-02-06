@@ -52,6 +52,12 @@ public class World {
         if (ly == Chunk.CHUNK_SIZE - 1) markDirty(cx, cy + 1, cz);
         if (lz == 0) markDirty(cx, cy, cz - 1);
         if (lz == Chunk.CHUNK_SIZE - 1) markDirty(cx, cy, cz + 1);
+        
+        short above = getBlock(bx, by+1, bz);
+        if (Blocks.isPlant(above) && !Blocks.canPlantGrowOn(packed)) {
+        	//Note that this doesn't change lighting (that happens only on blocks placed in Game.handleBlockInteraction)
+        	setBlock(bx,by+1,bz,Blocks.AIR);
+        }
     }
 
     public int getSkyLight(int bx, int by, int bz) {

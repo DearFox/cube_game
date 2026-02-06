@@ -87,7 +87,6 @@ public class Renderer {
 		// -------------------------
 		// PASS 1: SOLID (opaque + cutout glass) 
 		// -------------------------
-		//TODO put glass back here
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, fbw, fbh);
 

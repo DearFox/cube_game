@@ -178,4 +178,11 @@ public class Blocks {
         int kind = BlockData.kind(packed);
         return kind == PLANT_GRASS_KIND;
     }
+    
+    public static boolean canPlantGrowOn(short belowPacked) {
+    	int k = BlockData.kind(belowPacked);
+    	if (k== GRASS_KIND) return true;
+    	if (k== DIRT_KIND) return true;
+    	return false;
+    }
 }
