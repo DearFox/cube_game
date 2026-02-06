@@ -1,5 +1,12 @@
 package com.you.world;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
 public class Blocks {
 
     // Kinds (not packed). Up to 4096 kinds (12 bits).
@@ -49,52 +56,107 @@ public class Blocks {
     }
 
     public static void initDefaults() {
-        // register block types by kind. BlockType.id() should return the kind
-        register(new BlockType(AIR_KIND, "air", false,
-                // faces don't matter for air
+    	register(new BlockType(AIR_KIND, "air", false,
                 0,0, 0,0, 0,0, 0,0, 0,0, 0,0
         ));
 
-        // Face order: +X,-X,+Y,-Y,+Z,-Z
-        // Each face uses a tileX,tileY in your atlas grid
+        // ---- grass block: side + top + bottom ----
+        int[] grassSide = t("grass_side");
+        int[] grassTop  = t("grass_top");
+        int[] grassBottom      = t("grass_bottom");
+
         register(new BlockType(GRASS_KIND, "grass", true,
-                0,3,  0,3,  3,3,  1,3,  0,3,  0,3
+                grassSide[0], grassSide[1],   // +X
+                grassSide[0], grassSide[1],   // -X
+                grassTop[0],  grassTop[1],    // +Y
+                grassBottom[0],  grassBottom[1],        // -Y
+                grassSide[0], grassSide[1],   // +Z
+                grassSide[0], grassSide[1]    // -Z
         ));
 
+        // ---- dirt ----
+        int[] dirt     = t("dirt");
         register(new BlockType(DIRT_KIND, "dirt", true,
-                1,3,  1,3,  1,3,  1,3,  1,3,  1,3
+                dirt[0], dirt[1],  dirt[0], dirt[1],
+                dirt[0], dirt[1],  dirt[0], dirt[1],
+                dirt[0], dirt[1],  dirt[0], dirt[1]
         ));
 
+        // ---- stone ----
+        int[] stone = t("cobblestone");
         register(new BlockType(STONE_KIND, "stone", true,
-                2,3,  2,3,  2,3,  2,3,  2,3,  2,3
+                stone[0], stone[1], stone[0], stone[1],
+                stone[0], stone[1], stone[0], stone[1],
+                stone[0], stone[1], stone[0], stone[1]
         ));
 
+        // ---- glass (cutout) ----
+        int[] glass = t("glass");
         register(new BlockType(GLASS_KIND, "glass", true,
-                2,2,  2,2,  2,2,  2,2,  2,2,  2,2
+                glass[0], glass[1], glass[0], glass[1],
+                glass[0], glass[1], glass[0], glass[1],
+                glass[0], glass[1], glass[0], glass[1]
         ));
+
+        // ---- stone brick ----
+        int[] stonebrick = t("stone_bricks");
         register(new BlockType(STONEBRICK_KIND, "stone brick", true,
-                3,2,  3,2,  3,2,  3,2,  3,2,  3,2
+                stonebrick[0], stonebrick[1], stonebrick[0], stonebrick[1],
+                stonebrick[0], stonebrick[1], stonebrick[0], stonebrick[1],
+                stonebrick[0], stonebrick[1], stonebrick[0], stonebrick[1]
         ));
+
+        // ---- sand ----
+        int[] sand = t("sand");
         register(new BlockType(SAND_KIND, "sand", true,
-                0,1,  0,1,  0,1,  0,1,  0,1,  0,1
+                sand[0], sand[1], sand[0], sand[1],
+                sand[0], sand[1], sand[0], sand[1],
+                sand[0], sand[1], sand[0], sand[1]
         ));
+
+        // ---- mossy cobble ----
+        int[] mossyCobble = t("cobblestone_mossy");
         register(new BlockType(MOSSYCOBBLE_KIND, "mossy cobblestone", true,
-                1,1,  1,1,  1,1,  1,1,  1,1,  1,1
+                mossyCobble[0], mossyCobble[1], mossyCobble[0], mossyCobble[1],
+                mossyCobble[0], mossyCobble[1], mossyCobble[0], mossyCobble[1],
+                mossyCobble[0], mossyCobble[1], mossyCobble[0], mossyCobble[1]
         ));
+
+        // ---- mossy stone brick ----
+        int[] mossyStoneBrick = t("stone_bricks_mossy");
         register(new BlockType(MOSSYSTONEBRICK_KIND, "mossy stone brick", true,
-                2,1,  2,1,  2,1,  2,1,  2,1,  2,1
+                mossyStoneBrick[0], mossyStoneBrick[1], mossyStoneBrick[0], mossyStoneBrick[1],
+                mossyStoneBrick[0], mossyStoneBrick[1], mossyStoneBrick[0], mossyStoneBrick[1],
+                mossyStoneBrick[0], mossyStoneBrick[1], mossyStoneBrick[0], mossyStoneBrick[1]
         ));
+
+        // ---- plants (cross-model uses same tile on all faces in your BlockType) ----
+        int[] plantGrass = t("grass");
         register(new BlockType(PLANT_GRASS_KIND, "grass", false,
-                3,1,  3,1,  3,1,  3,1,  3,1,  3,1
+                plantGrass[0], plantGrass[1], plantGrass[0], plantGrass[1],
+                plantGrass[0], plantGrass[1], plantGrass[0], plantGrass[1],
+                plantGrass[0], plantGrass[1], plantGrass[0], plantGrass[1]
         ));
+
+        int[] triteleia = t("triplet_lily");
         register(new BlockType(PLANT_TRITELEIA_KIND, "triplet lily", false,
-                0,0,  0,0,  0,0,  0,0,  0,0,  0,0
+                triteleia[0], triteleia[1], triteleia[0], triteleia[1],
+                triteleia[0], triteleia[1], triteleia[0], triteleia[1],
+                triteleia[0], triteleia[1], triteleia[0], triteleia[1]
         ));
+
+        int[] redMush = t("mushroom_red");
         register(new BlockType(MUSHROOM_RED_KIND, "red mushroom", false,
-                1,0,  1,0,  1,0,  1,0,  1,0,  1,0
+                redMush[0], redMush[1], redMush[0], redMush[1],
+                redMush[0], redMush[1], redMush[0], redMush[1],
+                redMush[0], redMush[1], redMush[0], redMush[1]
         ));
+
+        int[] brownMush = t("mushroom_brown");
         register(new BlockType(MUSHROOM_BROWN_KIND, "brown mushroom", false,
-                2,0,  2,0,  2,0,  2,0,  2,0,  2,0
+                brownMush[0], brownMush[1], brownMush[0], brownMush[1],
+                brownMush[0], brownMush[1], brownMush[0], brownMush[1],
+                brownMush[0], brownMush[1], brownMush[0], brownMush[1]
         ));
     }
 
@@ -104,6 +166,82 @@ public class Blocks {
         byKind[k] = t;
     }
 
+ // -------- Atlas mapping (name -> tileX,tileY) --------
+
+    private static final class Tile {
+        final int x, y;
+        Tile(int x, int y) { this.x = x; this.y = y; }
+    }
+
+    private static final Map<String, Tile> ATLAS = new HashMap<>();
+    private static boolean atlasLoaded = false;
+
+    /**
+     * Load atlas mapping file generated by AtlasPacker.
+     * File format:
+     *   # comments...
+     *   name tileX tileY
+     */
+    public static void loadAtlasMap(String resourcePath) {
+        ATLAS.clear();
+
+        try (InputStream in = Blocks.class.getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                throw new IllegalStateException("Missing atlas map resource: " + resourcePath);
+            }
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                String line;
+                int lineNo = 0;
+                while ((line = br.readLine()) != null) {
+                    lineNo++;
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) continue;
+
+                    String[] parts = line.split("\\s+");
+                    if (parts.length < 3) {
+                        throw new IllegalStateException("Bad atlas line " + lineNo + ": " + line);
+                    }
+
+                    String name = parts[0];
+                    int tx = Integer.parseInt(parts[1]);
+                    int ty = Integer.parseInt(parts[2]);
+
+                    ATLAS.put(name, new Tile(tx, ty));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed loading atlas map: " + resourcePath, e);
+        }
+
+        atlasLoaded = true;
+    }
+
+    /** Returns tile coords for a given atlas tile name. Hard-fails if missing. */
+    private static int[] t(String tileName) {
+        if (!atlasLoaded) {
+            throw new IllegalStateException("Atlas map not loaded. Call Blocks.loadAtlasMap(...) before initDefaults().");
+        }
+        Tile tile = ATLAS.get(tileName);
+        if (tile == null) {
+            throw new IllegalArgumentException("Missing tile in atlas.txt: '" + tileName + "'");
+        }
+        return new int[]{ tile.x, tile.y };
+    }
+
+    /** Convenience: returns coords or falls back to another tile name if missing. */
+    private static int[] tOr(String tileName, String fallbackTileName) {
+        if (!atlasLoaded) {
+            throw new IllegalStateException("Atlas map not loaded. Call Blocks.loadAtlasMap(...) before initDefaults().");
+        }
+        Tile tile = ATLAS.get(tileName);
+        if (tile == null) tile = ATLAS.get(fallbackTileName);
+        if (tile == null) {
+            throw new IllegalArgumentException("Missing tile in atlas.txt: '" + tileName + "' (and fallback '" + fallbackTileName + "')");
+        }
+        return new int[]{ tile.x, tile.y };
+    }
+    
     // --- helpers that operate on packed short values ---
 
     public static boolean isSolid(short packed) {

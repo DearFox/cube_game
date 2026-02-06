@@ -171,7 +171,7 @@ public class Mesher {
 		int tileX = bt.tileX(face);
 		int tileY = bt.tileY(face);
 
-		float[] uv = tileUV(tileX, tileY, atlasW, atlasH, tileSizePx);
+		float[] uv = tileUV_Padded(tileX, tileY, atlasW, atlasH, tileSizePx, 8);
 		float u0 = uv[0], v0 = uv[1], u1 = uv[2], v1 = uv[3];
 
 		float p0u = 0, p0v = 0, p1u = 0, p1v = 0, p2u = 0, p2v = 0, p3u = 0, p3v = 0;
@@ -272,7 +272,7 @@ public class Mesher {
 		int tileX = bt.tileX(2);
 		int tileY = bt.tileY(2);
 
-		float[] uv = tileUV(tileX, tileY, atlasW, atlasH, tileSizePx);
+		float[] uv = tileUV_Padded(tileX, tileY, atlasW, atlasH, tileSizePx, 8);
 		float u0 = uv[0], v0 = uv[1], u1 = uv[2], v1 = uv[3];
 
 		// Quad A: diagonal from (x0,z0) to (x1,z1)
@@ -385,27 +385,72 @@ public class Mesher {
 		out.add(light01);
 	}
 
-	private static float[] tileUV(int tileX, int tileY, int atlasW, int atlasH, int tileSizePx) {
-		int tilesPerRow = atlasW / tileSizePx;
-		int tilesPerCol = atlasH / tileSizePx;
+	// tileX,tileY are tile indices from the atlas map (not pixels)
+	// tileSizePx = actual tile image size (e.g. 16)
+	// padPx = padding per tile side (e.g. 2)
+	private static float[] tileUV(int tileX, int tileY, int atlasW, int atlasH, int tileSizePx, int padPx) {
+	    int cell = tileSizePx + padPx * 2;
 
-		if (tileX < 0)
-			tileX = 0;
-		if (tileY < 0)
-			tileY = 0;
-		if (tileX >= tilesPerRow)
-			tileX = tilesPerRow - 1;
-		if (tileY >= tilesPerCol)
-			tileY = tilesPerCol - 1;
+	    int tilesPerRow = atlasW / cell;
+	    int tilesPerCol = atlasH / cell;
 
-		float uSize = (float) tileSizePx / (float) atlasW;
-		float vSize = (float) tileSizePx / (float) atlasH;
+	    if (tileX < 0) tileX = 0;
+	    if (tileY < 0) tileY = 0;
+	    if (tileX >= tilesPerRow) tileX = tilesPerRow - 1;
+	    if (tileY >= tilesPerCol) tileY = tilesPerCol - 1;
 
-		float u0 = tileX * uSize;
-		float v0 = tileY * vSize;
-		float u1 = u0 + uSize;
-		float v1 = v0 + vSize;
+	    float uCell = (float) cell / (float) atlasW;
+	    float vCell = (float) cell / (float) atlasH;
 
-		return new float[] { u0, v0, u1, v1 };
+	    // Start of this cell
+	    float u0 = tileX * uCell;
+	    float v0 = tileY * vCell;
+
+	    // Offset into cell by padding
+	    float duPad = (float) padPx / (float) atlasW;
+	    float dvPad = (float) padPx / (float) atlasH;
+
+	    float uTile0 = u0 + duPad;
+	    float vTile0 = v0 + dvPad;
+
+	    float duTile = (float) tileSizePx / (float) atlasW;
+	    float dvTile = (float) tileSizePx / (float) atlasH;
+
+	    float uTile1 = uTile0 + duTile;
+	    float vTile1 = vTile0 + dvTile;
+
+	    // Optional: half-texel inset inside the tile region for extra safety
+	    /*float duInset = 0.5f / atlasW;
+	    float dvInset = 0.5f / atlasH;
+
+	    uTile0 += duInset; vTile0 += dvInset;
+	    uTile1 -= duInset; vTile1 -= dvInset;*/
+
+	    return new float[]{ uTile0, vTile0, uTile1, vTile1 };
+	}
+	
+	private static float[] tileUV_Padded(
+	        int tileX, int tileY,
+	        int atlasW, int atlasH,
+	        int tileSizePx, int padPx
+	) {
+	    int stride = tileSizePx + padPx * 2;
+
+	    // pixel rect of the *inner* tile content (excluding padding)
+	    int px0 = tileX * stride + padPx;
+	    int py0 = tileY * stride + padPx;
+	    int px1 = px0 + tileSizePx;
+	    int py1 = py0 + tileSizePx;
+
+	    // Half-texel inset to avoid sampling exactly on borders
+	    float epsU = 0;
+	    float epsV = 0;
+
+	    float u0 = (px0 / (float) atlasW) + epsU;
+	    float v0 = (py0 / (float) atlasH) + epsV;
+	    float u1 = (px1 / (float) atlasW) - epsU;
+	    float v1 = (py1 / (float) atlasH) - epsV;
+
+	    return new float[]{ u0, v0, u1, v1 };
 	}
 }

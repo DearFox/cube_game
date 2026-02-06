@@ -70,6 +70,7 @@ public class Game {
 		camera = new Camera(new Vector3f(0f, 1.5f, 5f));
 
 		world = new World();
+		Blocks.loadAtlasMap("/atlas.txt");
 		Blocks.initDefaults(); // registers block types
 		world.generateTestWorld();
 		lighting.rebuildAll(world);
@@ -81,7 +82,8 @@ public class Game {
 		mesher = new Mesher();
 
 		renderer = new Renderer(mesher);
-		renderer.init("/shaders/basic.vert", "/shaders/basic.frag", "src/main/resources/textures/blocks.png");
+		//renderer.init("/shaders/basic.vert", "/shaders/basic.frag", "src/main/resources/textures/blocks.png");
+		renderer.init("/shaders/basic.vert", "/shaders/basic.frag", "src/main/resources/atlas.png");
 
 		atlas = renderer.getAtlas();
 		hud = new HudRenderer(atlas, 16, player);

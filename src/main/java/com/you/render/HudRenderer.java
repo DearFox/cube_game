@@ -216,7 +216,7 @@ public class HudRenderer {
 			int tileX = bt.tileX(2);
 			int tileY = bt.tileY(2);
 
-			float[] uv = tileUV(tileX, tileY, atlasW, atlasH, tileSizePx);
+			float[] uv = tileUV(tileX, tileY, atlasW, atlasH, tileSizePx, 8);
 			float u0 = uv[0], v0 = uv[1], u1 = uv[2], v1 = uv[3];
 
 			float x0 = sx;
@@ -305,30 +305,41 @@ public class HudRenderer {
 			glEnable(GL_DEPTH_TEST);
 	}
 
-	// tile coords (tileX,tileY) where (0,0) is TOP-LEFT in your image editor.
-	// Because the atlas is loaded with STB flip=true, we do NOT flip tileY here.
-	private static float[] tileUV(int tileX, int tileY, int atlasW, int atlasH, int tileSizePx) {
-		int tilesPerRow = atlasW / tileSizePx;
-		int tilesPerCol = atlasH / tileSizePx;
+	// tileX,tileY are tile indices from the atlas map (not pixels)
+	// tileSizePx = actual tile image size (e.g. 16)
+	// padPx = padding per tile side (e.g. 2)
+	private static float[] tileUV(int tileX, int tileY, int atlasW, int atlasH, int tileSizePx, int padPx) {
+	    int cell = tileSizePx + padPx * 2;
 
-		if (tileX < 0)
-			tileX = 0;
-		if (tileY < 0)
-			tileY = 0;
-		if (tileX >= tilesPerRow)
-			tileX = tilesPerRow - 1;
-		if (tileY >= tilesPerCol)
-			tileY = tilesPerCol - 1;
+	    int tilesPerRow = atlasW / cell;
+	    int tilesPerCol = atlasH / cell;
 
-		float uSize = (float) tileSizePx / (float) atlasW;
-		float vSize = (float) tileSizePx / (float) atlasH;
+	    if (tileX < 0) tileX = 0;
+	    if (tileY < 0) tileY = 0;
+	    if (tileX >= tilesPerRow) tileX = tilesPerRow - 1;
+	    if (tileY >= tilesPerCol) tileY = tilesPerCol - 1;
 
-		float u0 = tileX * uSize;
-		float v0 = tileY * vSize;
-		float u1 = u0 + uSize;
-		float v1 = v0 + vSize;
+	    float uCell = (float) cell / (float) atlasW;
+	    float vCell = (float) cell / (float) atlasH;
 
-		return new float[] { u0, v0, u1, v1 };
+	    // Start of this cell
+	    float u0 = tileX * uCell;
+	    float v0 = tileY * vCell;
+
+	    // Offset into cell by padding
+	    float duPad = (float) padPx / (float) atlasW;
+	    float dvPad = (float) padPx / (float) atlasH;
+
+	    float uTile0 = u0 + duPad;
+	    float vTile0 = v0 + dvPad;
+
+	    float duTile = (float) tileSizePx / (float) atlasW;
+	    float dvTile = (float) tileSizePx / (float) atlasH;
+
+	    float uTile1 = uTile0 + duTile;
+	    float vTile1 = vTile0 + dvTile;
+
+	    return new float[]{ uTile0, vTile0, uTile1, vTile1 };
 	}
 
 	public void cleanup() {
@@ -545,16 +556,13 @@ public class HudRenderer {
 			int tileX = bt.tileX(2);
 			int tileY = bt.tileY(2);
 
-			float[] uv = tileUV(tileX, tileY, atlasW, atlasH, tileSizePx);
+			float[] uv = tileUV(tileX, tileY, atlasW, atlasH, tileSizePx, 8);
 			float u0 = uv[0], v0 = uv[1], u1 = uv[2], v1 = uv[3];
 
 			float x0 = x, y0 = y, x1 = x + creativeCell, y1 = y + creativeCell;
 
 			float[] verts = new float[] { x0, y0, u0, v1, x1, y1, u1, v0, x1, y0, u1, v1, x0, y0, u0, v1, x0, y1, u0,
 					v0, x1, y1, u1, v0 };
-			/*
-			float[] verts = new float[] { x0, y0, u0, v0, x1, y1, u1, v1, x1, y0, u1, v0, x0, y0, u0, v0, x0, y1, u0,
-					v1, x1, y1, u1, v1 };*/
 
 			try (MemoryStack ms = MemoryStack.stackPush()) {
 				FloatBuffer fbuff = ms.mallocFloat(verts.length);
