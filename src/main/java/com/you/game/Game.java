@@ -82,7 +82,6 @@ public class Game {
 		mesher = new Mesher();
 
 		renderer = new Renderer(mesher);
-		//renderer.init("/shaders/basic.vert", "/shaders/basic.frag", "src/main/resources/textures/blocks.png");
 		renderer.init("/shaders/basic.vert", "/shaders/basic.frag", "src/main/resources/atlas.png");
 
 		atlas = renderer.getAtlas();
@@ -128,7 +127,6 @@ public class Game {
 		float maxDist = 6.0f;
 
 		// hotbar selection via mouse wheel
-		//int wheel = input.consumeScroll();
 		int wheel = Math.round(input.consumeScrollDY());
 		if (wheel != 0) {
 			player.getInventory().cycleSelected(wheel);
@@ -175,18 +173,19 @@ public class Game {
 
 		            short place = player.getInventory().getSelected().packed;
 		            short below = world.getBlock(tx, ty-1, tz);
-		            //check if block is (plant and being placed on a valid block) or (not a plant) and therefore all placements are valid
-		            //TODO Add a method to blocks that takes selected block + block it's being placed onto and returns whether it's a valid placement
-		            if ((Blocks.isPlant(place) && Blocks.canPlantGrowOn(below)) || !Blocks.isPlant(place)) {
-		            	short old = world.setBlockReturningOld(tx, ty, tz, place);
-			            lighting.onBlockChanged(world, tx, ty, tz, old, place);
-			            world.markDirtyAtBlock(tx, ty, tz);
-		            }
-		            
+		            //check that the selected block is not air (so that plants won't be replaced by it)
+		            if(!(place==0)) {
+		            	//check if block is (plant and being placed on a valid block) or (not a plant) and therefore all placements are valid
+			            //TODO Add a method to blocks that takes selected block + block it's being placed onto and returns whether it's a valid placement
+		            	if ((Blocks.isPlant(place) && Blocks.canPlantGrowOn(below)) || !Blocks.isPlant(place)) {
+			            	short old = world.setBlockReturningOld(tx, ty, tz, place);
+				            lighting.onBlockChanged(world, tx, ty, tz, old, place);
+				            world.markDirtyAtBlock(tx, ty, tz);
+			            }
+		            } 
 		        }
 		    }
 		}
-
 	}
 
 	private void cleanup() {

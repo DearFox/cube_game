@@ -15,9 +15,9 @@ uniform float uPlantFactor; // 0.0..1.0
 float faceBrightness(vec3 N) {
     vec3 a = abs(N);
     if (a.y >= a.x && a.y >= a.z) {
-        return (N.y > 0.0) ? 1.00 : 0.80; // top / bottom
+        return (N.y > 0.0) ? 1.00 : 0.85; // top / bottom
     } else {
-        return 0.97; // sides
+        return 0.95; // sides
     }
 }
 
