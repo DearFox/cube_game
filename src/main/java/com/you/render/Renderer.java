@@ -1,14 +1,83 @@
 package com.you.render;
 
-import com.you.engine.*;
-import com.you.world.*;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import java.util.ArrayList;
-import java.util.HashMap;
-import org.lwjgl.system.MemoryStack;
+import static org.lwjgl.opengl.GL11.GL_BACK;
+import static org.lwjgl.opengl.GL11.GL_BLEND;
+import static org.lwjgl.opengl.GL11.GL_CCW;
+import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.GL_FLOAT;
+import static org.lwjgl.opengl.GL11.GL_NEAREST;
+import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
+import static org.lwjgl.opengl.GL11.GL_RED;
+import static org.lwjgl.opengl.GL11.GL_RGBA;
+import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glBlendFunc;
+import static org.lwjgl.opengl.GL11.glCullFace;
+import static org.lwjgl.opengl.GL11.glDeleteTextures;
+import static org.lwjgl.opengl.GL11.glDepthMask;
+import static org.lwjgl.opengl.GL11.glDisable;
+import static org.lwjgl.opengl.GL11.glDrawArrays;
+import static org.lwjgl.opengl.GL11.glDrawBuffer;
+import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glFrontFace;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glReadBuffer;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameteri;
+import static org.lwjgl.opengl.GL11.glViewport;
+import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24;
+import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
+import static org.lwjgl.opengl.GL15.glBindBuffer;
+import static org.lwjgl.opengl.GL15.glBufferData;
+import static org.lwjgl.opengl.GL15.glDeleteBuffers;
+import static org.lwjgl.opengl.GL15.glGenBuffers;
+import static org.lwjgl.opengl.GL20.glDrawBuffers;
+import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
+import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
+import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0;
+import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT1;
+import static org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT;
+import static org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_COMPLETE;
+import static org.lwjgl.opengl.GL30.GL_R16F;
+import static org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.GL_RENDERBUFFER;
+import static org.lwjgl.opengl.GL30.GL_RGBA16F;
+import static org.lwjgl.opengl.GL30.glBindFramebuffer;
+import static org.lwjgl.opengl.GL30.glBindRenderbuffer;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL30.glCheckFramebufferStatus;
+import static org.lwjgl.opengl.GL30.glDeleteFramebuffers;
+import static org.lwjgl.opengl.GL30.glDeleteRenderbuffers;
+import static org.lwjgl.opengl.GL30.glDeleteVertexArrays;
+import static org.lwjgl.opengl.GL30.glFramebufferRenderbuffer;
+import static org.lwjgl.opengl.GL30.glFramebufferTexture2D;
+import static org.lwjgl.opengl.GL30.glGenFramebuffers;
+import static org.lwjgl.opengl.GL30.glGenRenderbuffers;
+import static org.lwjgl.opengl.GL30.glGenVertexArrays;
+import static org.lwjgl.opengl.GL30.glRenderbufferStorage;
+
 import java.nio.IntBuffer;
-import static org.lwjgl.opengl.GL33.*;
+import java.util.HashMap;
+
+import org.joml.Matrix4f;
+import org.lwjgl.system.MemoryStack;
+
+import com.you.engine.Camera;
+import com.you.engine.ShaderProgram;
+import com.you.engine.Texture;
+import com.you.engine.Window;
+import com.you.world.Chunk;
+import com.you.world.ChunkPos;
+import com.you.world.Mesher;
+import com.you.world.World;
 
 public class Renderer {
 
@@ -106,6 +175,8 @@ public class Renderer {
 		shader.setVec3("uLightDir", lightX, lightY, lightZ);
 		shader.setVec3("uAmbient", ambX, ambY, ambZ);
 		shader.setVec3("uColor", 1f, 1f, 1f);
+		
+		shader.setFloat("uPlantFactor", 0.0f);
 
 		for (Chunk c : world.getChunks()) {
 			ChunkMeshGpu m = gpu.get(c.pos);
@@ -137,6 +208,8 @@ public class Renderer {
 		shader.setVec3("uLightDir", lightX, lightY, lightZ);
 		shader.setVec3("uAmbient", ambX, ambY, ambZ);
 		shader.setVec3("uColor", 1f, 1f, 1f);
+		
+		shader.setFloat("uPlantFactor", 1.0f); 
 
 		for (Chunk c : world.getChunks()) {
 		    ChunkMeshGpu m = gpu.get(c.pos);

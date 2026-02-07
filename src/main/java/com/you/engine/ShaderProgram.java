@@ -82,6 +82,10 @@ public class ShaderProgram {
     public void setInt(String name, int v) {
         glUniform1i(u(name), v);
     }
+    
+    public void setFloat(String name, float v) {
+        glUniform1f(u(name), v);
+    }
 
     public void setVec3(String name, float x, float y, float z) {
         glUniform3f(u(name), x, y, z);
@@ -111,6 +115,12 @@ public class ShaderProgram {
             // System.err.println("Warning: uniform '" + name + "' not found in shader " + programId);
         }
     }
+
+    //getter for shader program ID
+	public int getId() {
+		return this.programId;
+	}
+    
 
 }
 

@@ -7,20 +7,14 @@ layout (location = 3) in float aLight;
 uniform mat4 uViewProj;
 uniform mat4 uModel;
 
-out vec3 vNormal;
+flat out vec3 vNormal;   // ONLY this is flat
 out vec2 vUV;
 out float vLight;
 
 void main() {
     vec4 worldPos = uModel * vec4(aPos, 1.0);
 
-    // If you never scale uModel, this is fine:
     vNormal = normalize(mat3(uModel) * aNormal);
-
-    // If you *might* scale later, use this instead:
-    // mat3 normalMat = transpose(inverse(mat3(uModel)));
-    // vNormal = normalize(normalMat * aNormal);
-
     vUV = aUV;
     vLight = aLight;
 
