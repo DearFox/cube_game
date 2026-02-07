@@ -47,6 +47,7 @@ public class PlayerInventory {
         creativeEntries.add(Blocks.PLANT_TRITELEIA);
         creativeEntries.add(Blocks.MUSHROOM_RED);
         creativeEntries.add(Blocks.MUSHROOM_BROWN);
+        creativeEntries.add(Blocks.MUSHROOM_BLUE);
     }
 
     public ItemStack getSelected() {

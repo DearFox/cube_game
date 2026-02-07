@@ -69,7 +69,6 @@ public final class AtlasPacker {
             // IMPORTANT: alpha-bleed BEFORE copying into atlas and extruding padding
             // iterations should be at least pad
             src = alphaBleed(src, pad, 0);
-            if (src == null) throw new IOException("Failed to read " + p);
 
             if (src.getWidth() != tileSize || src.getHeight() != tileSize) {
                 throw new IllegalArgumentException(
@@ -90,6 +89,8 @@ public final class AtlasPacker {
             map.append(name).append(" ").append(tx).append(" ").append(ty).append("\n");
         }
 
+        atlas = alphaBleedAtlas(atlas, 6);
+        
         Files.createDirectories(outPng.getParent());
         ImageIO.write(atlas, "PNG", outPng.toFile());
 
@@ -222,6 +223,56 @@ public final class AtlasPacker {
 
         BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         out.setRGB(0, 0, w, h, cur, 0, w);
+        return out;
+    }
+    
+    private static BufferedImage alphaBleedAtlas(BufferedImage img, int iterations) {
+        int w = img.getWidth(), h = img.getHeight();
+        int[] a = img.getRGB(0, 0, w, h, null, 0, w);
+        int[] b = Arrays.copyOf(a, a.length);
+
+        for (int it = 0; it < iterations; it++) {
+            boolean changed = false;
+            for (int y = 0; y < h; y++) {
+                int yw = y * w;
+                for (int x = 0; x < w; x++) {
+                    int i = yw + x;
+                    int c = a[i];
+                    int alpha = (c >>> 24) & 0xFF;
+                    if (alpha != 0) { b[i] = c; continue; }
+
+                    int rSum=0,gSum=0,bSum=0,count=0;
+                    for (int oy=-1; oy<=1; oy++) {
+                        int yy = y + oy;
+                        if (yy<0||yy>=h) continue;
+                        int yyw = yy*w;
+                        for (int ox=-1; ox<=1; ox++) {
+                            int xx = x + ox;
+                            if (xx<0||xx>=w) continue;
+                            int nc = a[yyw + xx];
+                            int na = (nc >>> 24) & 0xFF;
+                            if (na==0) continue;
+                            rSum += (nc >>> 16) & 0xFF;
+                            gSum += (nc >>>  8) & 0xFF;
+                            bSum += (nc       ) & 0xFF;
+                            count++;
+                        }
+                    }
+                    if (count>0) {
+                        int r=rSum/count, g=gSum/count, bl=bSum/count;
+                        b[i] = (0<<24) | (r<<16) | (g<<8) | (bl);
+                        changed = true;
+                    } else {
+                        b[i] = c;
+                    }
+                }
+            }
+            int[] tmp = a; a = b; b = tmp;
+            if (!changed) break;
+        }
+
+        BufferedImage out = new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);
+        out.setRGB(0,0,w,h,a,0,w);
         return out;
     }
 }

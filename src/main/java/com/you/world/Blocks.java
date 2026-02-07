@@ -23,6 +23,7 @@ public class Blocks {
     public static final int PLANT_TRITELEIA_KIND = 10;
     public static final int MUSHROOM_RED_KIND = 11;
     public static final int MUSHROOM_BROWN_KIND = 12;
+    public static final int MUSHROOM_BLUE_KIND = 13;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -38,6 +39,7 @@ public class Blocks {
     public static final short PLANT_TRITELEIA = BlockData.pack(PLANT_TRITELEIA_KIND, 0);
     public static final short MUSHROOM_RED = BlockData.pack(MUSHROOM_RED_KIND, 0);
     public static final short MUSHROOM_BROWN = BlockData.pack(MUSHROOM_BROWN_KIND, 0);
+    public static final short MUSHROOM_BLUE = BlockData.pack(MUSHROOM_BLUE_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -158,6 +160,13 @@ public class Blocks {
                 brownMush[0], brownMush[1], brownMush[0], brownMush[1],
                 brownMush[0], brownMush[1], brownMush[0], brownMush[1]
         ));
+        
+        int[] blueMush = t("mushroom_blue");
+        register(new BlockType(MUSHROOM_BLUE_KIND, "blue mushroom", false,
+                blueMush[0], blueMush[1], blueMush[0], blueMush[1],
+                blueMush[0], blueMush[1], blueMush[0], blueMush[1],
+                blueMush[0], blueMush[1], blueMush[0], blueMush[1]
+        ));
     }
 
     private static void register(BlockType t) {
@@ -261,12 +270,14 @@ public class Blocks {
         if (kind == PLANT_TRITELEIA_KIND) return 0;
         if (kind == MUSHROOM_RED_KIND) return 0;
         if (kind == MUSHROOM_BROWN_KIND) return 0;
+        if (kind == MUSHROOM_BLUE_KIND) return 0;
         return 15;
     }
 
     // emission 0..15
     public static int emission(short packed) {
         int kind = BlockData.kind(packed);
+        if (kind == MUSHROOM_BLUE_KIND) return 5;
         //if (kind == GLOW_KIND) return 15;
         return 0;
     }
@@ -299,6 +310,7 @@ public class Blocks {
         if (k== PLANT_TRITELEIA_KIND) return true;
         if (k== MUSHROOM_RED_KIND) return true;
         if (k== MUSHROOM_BROWN_KIND) return true;
+        if (k== MUSHROOM_BLUE_KIND) return true;
         return false;
     }
 
