@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.you.sound.SoundMaterial;
+
 public class Blocks {
 
     // Kinds (not packed). Up to 4096 kinds (12 bits).
@@ -24,6 +26,7 @@ public class Blocks {
     public static final int MUSHROOM_RED_KIND = 11;
     public static final int MUSHROOM_BROWN_KIND = 12;
     public static final int MUSHROOM_BLUE_KIND = 13;
+    public static final int PLANT_GOLD_POPPY_KIND = 14;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -40,6 +43,7 @@ public class Blocks {
     public static final short MUSHROOM_RED = BlockData.pack(MUSHROOM_RED_KIND, 0);
     public static final short MUSHROOM_BROWN = BlockData.pack(MUSHROOM_BROWN_KIND, 0);
     public static final short MUSHROOM_BLUE = BlockData.pack(MUSHROOM_BLUE_KIND, 0);
+    public static final short PLANT_GOLD_POPPY = BlockData.pack(PLANT_GOLD_POPPY_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -167,6 +171,13 @@ public class Blocks {
                 blueMush[0], blueMush[1], blueMush[0], blueMush[1],
                 blueMush[0], blueMush[1], blueMush[0], blueMush[1]
         ));
+        
+        int[] goldPoppy = t("golden_poppy");
+        register(new BlockType(PLANT_GOLD_POPPY_KIND, "golden poppy", false,
+        		goldPoppy[0], goldPoppy[1], goldPoppy[0], goldPoppy[1],
+        		goldPoppy[0], goldPoppy[1], goldPoppy[0], goldPoppy[1],
+        		goldPoppy[0], goldPoppy[1], goldPoppy[0], goldPoppy[1]
+        ));
     }
 
     private static void register(BlockType t) {
@@ -271,6 +282,7 @@ public class Blocks {
         if (kind == MUSHROOM_RED_KIND) return 0;
         if (kind == MUSHROOM_BROWN_KIND) return 0;
         if (kind == MUSHROOM_BLUE_KIND) return 0;
+        if (kind == PLANT_GOLD_POPPY_KIND) return 0;
         return 15;
     }
 
@@ -311,6 +323,7 @@ public class Blocks {
         if (k== MUSHROOM_RED_KIND) return true;
         if (k== MUSHROOM_BROWN_KIND) return true;
         if (k== MUSHROOM_BLUE_KIND) return true;
+        if (k== PLANT_GOLD_POPPY_KIND) return true;
         return false;
     }
 
@@ -335,4 +348,16 @@ public class Blocks {
     	if (k== DIRT_KIND) return true;
     	return false;
     }
+    
+    public static SoundMaterial getMaterialForId(short id) {
+    	int k = BlockData.kind(id);
+    	if (k== GRASS_KIND) return SoundMaterial.GRASS;
+    	if (k== DIRT_KIND) return SoundMaterial.DIRT;
+    	if (k== STONE_KIND) return SoundMaterial.STONE;
+    	if (k== GLASS_KIND) return SoundMaterial.GLASS;
+    	if (k== SAND_KIND) return SoundMaterial.SAND;
+    	if (isPlant(id)) return SoundMaterial.PLANT;
+    	return SoundMaterial.STONE;   	
+    }
+
 }

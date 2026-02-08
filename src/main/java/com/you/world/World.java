@@ -3,9 +3,14 @@ package com.you.world;
 import java.util.Collection;
 import java.util.HashMap;
 
+import com.you.sound.BlockSoundAction;
+import com.you.sound.BlockSoundRegistry;
+import com.you.sound.SoundMaterial;
+
 public class World {
 
     private final HashMap<ChunkPos, Chunk> chunks = new HashMap<>();
+    private BlockSoundRegistry blockSounds;
 
     public Collection<Chunk> getChunks() {
         return chunks.values();
@@ -56,7 +61,8 @@ public class World {
         short above = getBlock(bx, by+1, bz);
         if (Blocks.isPlant(above) && !Blocks.canPlantGrowOn(packed)) {
         	//Note that this doesn't change lighting (that happens only on blocks placed in Game.handleBlockInteraction)
-        	setBlock(bx,by+1,bz,Blocks.AIR);
+        	destroyBlockReturningOld(bx,by+1,bz,Blocks.AIR);
+        	//setBlock(bx,by+1,bz,Blocks.AIR);
         }
     }
 
@@ -184,6 +190,26 @@ public class World {
         setBlock(bx, by, bz, id); // your existing method
         return old;
     }
+    
+    public short placeBlockReturningOld(int bx, int by, int bz, short id) {
+    	short old = setBlockReturningOld(bx, by, bz, id);
+    	//play a sound
+    	if (blockSounds != null) {
+            SoundMaterial m = Blocks.getMaterialForId(id);
+            blockSounds.play(m, BlockSoundAction.PLACE, bx, by, bz);
+        }
+    	return old;
+    }
+    
+    public short destroyBlockReturningOld(int bx, int by, int bz, short id) {
+    	short old = setBlockReturningOld(bx, by, bz, id);
+    	//play a sound
+    	if (blockSounds != null && old != 0) {
+            SoundMaterial m = Blocks.getMaterialForId(old);
+            blockSounds.play(m, BlockSoundAction.BREAK, bx, by, bz);
+        }
+    	return old;
+    }
 
     public void markDirtyAtBlock(int bx, int by, int bz) {
         int cx = floorDiv(bx, Chunk.CHUNK_SIZE);
@@ -195,6 +221,10 @@ public class World {
 
     public Chunk getChunk(int cx,int cy,int cz){
         return chunks.get(new ChunkPos(cx,cy,cz));
+    }
+    
+    public void setBlockSoundRegistry(BlockSoundRegistry reg) {
+        this.blockSounds = reg;
     }
 
 }

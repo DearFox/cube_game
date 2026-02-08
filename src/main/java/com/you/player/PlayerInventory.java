@@ -48,6 +48,7 @@ public class PlayerInventory {
         creativeEntries.add(Blocks.MUSHROOM_RED);
         creativeEntries.add(Blocks.MUSHROOM_BROWN);
         creativeEntries.add(Blocks.MUSHROOM_BLUE);
+        creativeEntries.add(Blocks.PLANT_GOLD_POPPY);
     }
 
     public ItemStack getSelected() {
