@@ -2,13 +2,22 @@
 layout(location=0) out vec4 outAccum;
 layout(location=1) out float outReveal;
 
-in vec3 vNormal;
+flat in vec3 vNormal;
 in vec2 vUV;
 in float vLight;
 
 uniform sampler2D uTex;
 uniform vec3 uLightDir;
 uniform vec3 uAmbient;
+
+float faceBrightness(vec3 N) {
+    vec3 a = abs(N);
+    if (a.y >= a.x && a.y >= a.z) {
+        return (N.y > 0.0) ? 1.00 : 0.8; // top / bottom
+    } else {
+        return 0.95; // sides (same for all sides => opposite sides match)
+    }
+}
 
 void main() {
     vec3 N = normalize(vNormal);
@@ -38,3 +47,5 @@ void main() {
     // Revealage multiplicative term stored via blending
     outReveal = a;
 }
+
+

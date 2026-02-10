@@ -27,6 +27,7 @@ public class Blocks {
     public static final int MUSHROOM_BROWN_KIND = 12;
     public static final int MUSHROOM_BLUE_KIND = 13;
     public static final int PLANT_GOLD_POPPY_KIND = 14;
+    public static final int COBBLESTONE_KIND = 15;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -44,6 +45,7 @@ public class Blocks {
     public static final short MUSHROOM_BROWN = BlockData.pack(MUSHROOM_BROWN_KIND, 0);
     public static final short MUSHROOM_BLUE = BlockData.pack(MUSHROOM_BLUE_KIND, 0);
     public static final short PLANT_GOLD_POPPY = BlockData.pack(PLANT_GOLD_POPPY_KIND, 0);
+    public static final short COBBLESTONE = BlockData.pack(COBBLESTONE_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -89,7 +91,7 @@ public class Blocks {
         ));
 
         // ---- stone ----
-        int[] stone = t("cobblestone");
+        int[] stone = t("stone");
         register(new BlockType(STONE_KIND, "stone", true,
                 stone[0], stone[1], stone[0], stone[1],
                 stone[0], stone[1], stone[0], stone[1],
@@ -177,6 +179,13 @@ public class Blocks {
         		goldPoppy[0], goldPoppy[1], goldPoppy[0], goldPoppy[1],
         		goldPoppy[0], goldPoppy[1], goldPoppy[0], goldPoppy[1],
         		goldPoppy[0], goldPoppy[1], goldPoppy[0], goldPoppy[1]
+        ));
+        
+        int[] cobblestone = t("cobblestone");
+        register(new BlockType(COBBLESTONE_KIND, "cobblestone", true,
+        		cobblestone[0], cobblestone[1], cobblestone[0], cobblestone[1],
+        		cobblestone[0], cobblestone[1], cobblestone[0], cobblestone[1],
+        		cobblestone[0], cobblestone[1], cobblestone[0], cobblestone[1]
         ));
     }
 

@@ -35,6 +35,7 @@ import com.you.render.HudRenderer;
 import com.you.render.Renderer;
 import com.you.sound.BlockSoundAction;
 import com.you.sound.BlockSoundRegistry;
+import com.you.sound.FootstepSystem;
 import com.you.sound.SoundManager;
 import com.you.sound.SoundMaterial;
 import com.you.world.Blocks;
@@ -65,6 +66,7 @@ public class Game {
 	
 	private SoundManager sound;
 	private BlockSoundRegistry blockSounds;
+	private FootstepSystem footsteps;
 
 	Lighting lighting = new Lighting();
 
@@ -121,6 +123,7 @@ public class Game {
 	    registerBlockSounds(base);
 	    
 	    world.setBlockSoundRegistry(blockSounds);
+	    footsteps = new FootstepSystem(blockSounds);
 	    // ===== END AUDIO =====
 
 		player = new Player(new Vector3f(0f, 3f, 5f));
@@ -168,6 +171,7 @@ public class Game {
 				hud.update(input, window);
 			}
 			physics.update(player, camera, world, input, dt);
+			footsteps.update(world, player, player.isOnGround(), false);
 
 			// render
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -267,13 +271,13 @@ public class Game {
 			blockSounds.register(SoundMaterial.STONE, BlockSoundAction.PLACE,
 			        List.of("stone_place_1"), base);
 			blockSounds.register(SoundMaterial.STONE, BlockSoundAction.BREAK,
-			        List.of("stone_break_1"), base);
+			        List.of("stone_break_1","stone_break_2"), base);
 			blockSounds.register(SoundMaterial.GLASS, BlockSoundAction.PLACE,
 			        List.of("glass_place_1"), base);
 			blockSounds.register(SoundMaterial.GLASS, BlockSoundAction.BREAK,
 			        List.of("glass_break_1", "glass_break_2"), base);
 			blockSounds.register(SoundMaterial.SAND, BlockSoundAction.PLACE,
-			        List.of("dirt_place_1","dirt_place_2"), base);
+			        List.of("sand_place_1","sand_place_2"), base);
 			blockSounds.register(SoundMaterial.SAND, BlockSoundAction.BREAK,
 			        List.of("sand_break_1"), base);
 			blockSounds.register(SoundMaterial.GLASS, BlockSoundAction.PLACE,
@@ -284,6 +288,19 @@ public class Game {
 			        List.of("plant_place_1","plant_place_2"), base);
 			blockSounds.register(SoundMaterial.PLANT, BlockSoundAction.BREAK,
 			        List.of("plant_break_1", "plant_break_2"), base);
+			
+			blockSounds.register(SoundMaterial.GRASS, BlockSoundAction.STEP,
+			        List.of("grass_step_1","grass_step_2","grass_step_3"), base);
+			blockSounds.register(SoundMaterial.DIRT, BlockSoundAction.STEP,
+			        List.of("dirt_step_1","dirt_step_2"), base);
+			blockSounds.register(SoundMaterial.STONE, BlockSoundAction.STEP,
+			        List.of("stone_step_1","stone_step_2","stone_step_3"), base);
+			blockSounds.register(SoundMaterial.GLASS, BlockSoundAction.STEP,
+					List.of("stone_step_1","stone_step_2","stone_step_3"), base);
+			blockSounds.register(SoundMaterial.SAND, BlockSoundAction.STEP,
+			        List.of("sand_step_1","sand_step_2"), base);
+			blockSounds.register(SoundMaterial.PLANT, BlockSoundAction.STEP,
+			        List.of("plant_step_1","plant_step_2"), base);
 	    }
 	    catch (Exception e){
 	    	System.out.println(e);

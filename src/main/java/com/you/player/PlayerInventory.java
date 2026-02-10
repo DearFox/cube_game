@@ -26,7 +26,7 @@ public class PlayerInventory {
         // example starting hotbar: grass in slot 0
         hotbar[0] = new ItemStack(Blocks.GRASS, 64);
         hotbar[1] = new ItemStack(Blocks.DIRT, 64);
-        hotbar[2] = new ItemStack(Blocks.STONE, 64);
+        hotbar[2] = new ItemStack(Blocks.COBBLESTONE, 64);
         hotbar[3] = new ItemStack(Blocks.GLASS, 64);
         hotbar[4] = new ItemStack(Blocks.STONEBRICK, 64);
         hotbar[5] = new ItemStack(Blocks.SAND, 64);
@@ -37,6 +37,7 @@ public class PlayerInventory {
         // NOTE: if you maintain dynamic registration, replace the following with a registry walk.
         creativeEntries.add(Blocks.GRASS);
         creativeEntries.add(Blocks.DIRT);
+        creativeEntries.add(Blocks.COBBLESTONE);
         creativeEntries.add(Blocks.STONE);
         creativeEntries.add(Blocks.GLASS);
         creativeEntries.add(Blocks.STONEBRICK);

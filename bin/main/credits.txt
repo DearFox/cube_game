@@ -1,0 +1,17 @@
+IMAGES
+-Triteleia and tall grass by me
+-stone by JoeEnderman
+-Other blocks by ARoachIFoundOnMyPillow, under CC0
+SOUNDS
+-glass_break_1 by C_Rogers on Freesound.org, under CC0
+-glass_break_2 by lurpsis on Freesound, under CC0
+-glass_place_2 by schoman3 on Freesound, under CC0
+-sand block sounds by Mish7913 on Freesound, under CC0. Also the grass/dirt breaking sounds
+-plant sounds by Qubodup on OpenGameArt, under CC0
+-stone placing sound by thanvannispen on Freesound, under CC-BY 4.0
+-dirt/grass block placing sounds by HenKonen on Freesound, under CC0
+-plant_place_1 by me
+-stone_break_2 by morganpurkis on Freesound, under CC-BY 4.0
+-dirt_step_1 by Ali_6868 on Freesound, under CC0
+-dirt_step_2 by simonjeffery13 on Freesound, under CC0
+-stone step sounds by Fission9 on Freesound, under CC0

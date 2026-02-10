@@ -80,7 +80,7 @@ public final class AtlasPacker {
             int ty = i / columns;
 
             int dstX = tx * cell + pad;
-            int dstY = ty * cell + pad;
+            int dstY = (rows - 1 - ty) * cell + pad;
 
             blit(atlas, src, dstX, dstY);
             extrudePadding(atlas, dstX, dstY, tileSize, pad);
