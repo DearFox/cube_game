@@ -28,6 +28,7 @@ public class Blocks {
     public static final int MUSHROOM_BLUE_KIND = 13;
     public static final int PLANT_GOLD_POPPY_KIND = 14;
     public static final int COBBLESTONE_KIND = 15;
+    public static final int TORCH_KIND = 16;
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -46,9 +47,17 @@ public class Blocks {
     public static final short MUSHROOM_BLUE = BlockData.pack(MUSHROOM_BLUE_KIND, 0);
     public static final short PLANT_GOLD_POPPY = BlockData.pack(PLANT_GOLD_POPPY_KIND, 0);
     public static final short COBBLESTONE = BlockData.pack(COBBLESTONE_KIND, 0);
+    public static final short TORCH = BlockData.pack(TORCH_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
+    
+ // Torch states stored in BlockData.state(packed) (0..15 available)
+    public static final int TORCH_FLOOR = 0;
+    public static final int TORCH_WEST  = 1; // attached to west wall (wall is -X), torch leans +X
+    public static final int TORCH_EAST  = 2; // wall is +X, torch leans -X
+    public static final int TORCH_NORTH = 3; // wall is -Z, torch leans +Z
+    public static final int TORCH_SOUTH = 4; // wall is +Z, torch leans -Z
 
     // Return the BlockType for a packed short (or null if unknown)
     public static BlockType get(short packed) {
@@ -187,6 +196,13 @@ public class Blocks {
         		cobblestone[0], cobblestone[1], cobblestone[0], cobblestone[1],
         		cobblestone[0], cobblestone[1], cobblestone[0], cobblestone[1]
         ));
+        
+        int[] torch = t("torch");
+        register(new BlockType(TORCH_KIND, "torch", false,
+        		torch[0], torch[1], torch[0], torch[1],
+        		torch[0], torch[1], torch[0], torch[1],
+        		torch[0], torch[1], torch[0], torch[1]
+        ));
     }
 
     private static void register(BlockType t) {
@@ -278,6 +294,7 @@ public class Blocks {
         int kind = BlockData.kind(packed);
         if (kind == PLANT_GRASS_KIND) return false;
         if (kind == PLANT_TRITELEIA_KIND) return false;
+        if (kind == TORCH_KIND) return false;
         return t != null && t.solid();
     }
 
@@ -292,6 +309,7 @@ public class Blocks {
         if (kind == MUSHROOM_BROWN_KIND) return 0;
         if (kind == MUSHROOM_BLUE_KIND) return 0;
         if (kind == PLANT_GOLD_POPPY_KIND) return 0;
+        if (kind == TORCH_KIND) return 0;
         return 15;
     }
 
@@ -299,6 +317,7 @@ public class Blocks {
     public static int emission(short packed) {
         int kind = BlockData.kind(packed);
         if (kind == MUSHROOM_BLUE_KIND) return 5;
+        if (kind == TORCH_KIND) return 14;
         //if (kind == GLOW_KIND) return 15;
         return 0;
     }
@@ -338,7 +357,7 @@ public class Blocks {
 
     public static boolean isCutout(short packed) {
         int k = BlockData.kind(packed);
-        return k == GLASS_KIND || isPlant(packed);
+        return k == GLASS_KIND || k == TORCH_KIND || isPlant(packed);
     }
     
     public static boolean isHittable(short packed) {
@@ -358,6 +377,10 @@ public class Blocks {
     	return false;
     }
     
+    public static boolean isTorch(short packed) {
+        return BlockData.kind(packed) == TORCH_KIND;
+    }
+    
     public static SoundMaterial getMaterialForId(short id) {
     	int k = BlockData.kind(id);
     	if (k== GRASS_KIND) return SoundMaterial.GRASS;
@@ -368,6 +391,14 @@ public class Blocks {
     	if (isPlant(id)) return SoundMaterial.PLANT;
     	if (k== AIR_KIND) return SoundMaterial.AIR;
     	return SoundMaterial.STONE;   	
+    }
+    
+    public static int torchState(short packed) {
+        return BlockData.state(packed) & 0xF;
+    }
+
+    public static short withTorchState(short packed, int state) {
+        return BlockData.withState(packed, state);
     }
 
 }

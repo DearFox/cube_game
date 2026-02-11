@@ -219,31 +219,86 @@ public class Game {
 		    RayHit hit = raycast.raycast(world, camera.getPosition(), camera.getForward(), maxDist);
 		    if (hit.hit) {
 
+		        // Save original hit + placement (used to infer which face was clicked)
+		        int hx = hit.hitX, hy = hit.hitY, hz = hit.hitZ;
+		        int px = hit.placeX, py = hit.placeY, pz = hit.placeZ;
+
 		        // Decide where to place:
 		        // - replace plants/non-solid blocks directly
 		        // - otherwise place adjacent (classic)
-		        int tx = hit.placeX, ty = hit.placeY, tz = hit.placeZ;
-		        short hitBlock = world.getBlock(hit.hitX, hit.hitY, hit.hitZ);
-		        
+		        int tx = px, ty = py, tz = pz;
+		        short hitBlock = world.getBlock(hx, hy, hz);
+
 		        if (Blocks.isReplaceable(hitBlock)) {
-		            tx = hit.hitX; ty = hit.hitY; tz = hit.hitZ;
+		            tx = hx; ty = hy; tz = hz;
 		        }
 
 		        if (!world.isSolidBlock(tx, ty, tz) &&
 		            !physics.aabbIntersectsBlock(player.getPos(), player.getHalf(), tx, ty, tz)) {
 
 		            short place = player.getInventory().getSelected().packed;
-		            short below = world.getBlock(tx, ty-1, tz);
-		            //check that the selected block is not air (so that plants won't be replaced by it)
-		            if(!(place==0)) {
-		            	//check if block is (plant and being placed on a valid block) or (not a plant) and therefore all placements are valid
-			            //TODO Add a method to blocks that takes selected block + block it's being placed onto and returns whether it's a valid placement
-		            	if ((Blocks.isPlant(place) && Blocks.canPlantGrowOn(below)) || !Blocks.isPlant(place)) {
-			            	short old = world.placeBlockReturningOld(tx, ty, tz, place);
-				            lighting.onBlockChanged(world, tx, ty, tz, old, place);
-				            world.markDirtyAtBlock(tx, ty, tz);
-			            }
-		            } 
+
+		            // check that selected block is not air
+		            if (place != 0) {
+
+		                // --- TORCH SPECIAL PLACEMENT (wall/floor state + support checks) ---
+		                if (Blocks.isTorch(place)) {
+
+		                    // Infer clicked face from (original) adjacent placement position relative to hit block
+		                    int dx = px - hx;
+		                    int dy = py - hy;
+		                    int dz = pz - hz;
+
+		                    int torchState = Blocks.TORCH_FLOOR;
+
+		                    // If placing "adjacent" to a non-replaceable block, dx/dy/dz will be one of +/-1.
+		                    // If we replaced a block directly (replaceable), dx/dy/dz could be 0; in that case,
+		                    // we fall back to floor placement requiring support below.
+		                    if (dx == 1 && dy == 0 && dz == 0) torchState = Blocks.TORCH_WEST;   // wall at -X of torch cell
+		                    else if (dx == -1 && dy == 0 && dz == 0) torchState = Blocks.TORCH_EAST;
+		                    else if (dz == 1 && dy == 0 && dx == 0) torchState = Blocks.TORCH_NORTH;
+		                    else if (dz == -1 && dy == 0 && dx == 0) torchState = Blocks.TORCH_SOUTH;
+		                    else if (dy == 1 && dx == 0 && dz == 0) torchState = Blocks.TORCH_FLOOR;
+		                    else if (dy == -1 && dx == 0 && dz == 0) {
+		                        // Torch on ceiling not supported in classic Minecraft torch behavior
+		                        //continue;
+		                    	System.out.println("torch on ceiling");
+		                    } else {
+		                        // Unknown; default to floor
+		                        torchState = Blocks.TORCH_FLOOR;
+		                    }
+
+		                    // Validate support
+		                    boolean supported;
+		                    switch (torchState) {
+		                        case Blocks.TORCH_FLOOR -> supported = world.isSolidBlock(tx, ty - 1, tz);
+		                        case Blocks.TORCH_WEST  -> supported = world.isSolidBlock(tx - 1, ty, tz); // wall block is west
+		                        case Blocks.TORCH_EAST  -> supported = world.isSolidBlock(tx + 1, ty, tz);
+		                        case Blocks.TORCH_NORTH -> supported = world.isSolidBlock(tx, ty, tz - 1);
+		                        case Blocks.TORCH_SOUTH -> supported = world.isSolidBlock(tx, ty, tz + 1);
+		                        default -> supported = false;
+		                    }
+
+		                    if (!supported) System.out.println("something abt support");//continue;
+
+		                    // Pack the facing into state bits
+		                    place = Blocks.withTorchState(place, torchState);
+
+		                    short old = world.placeBlockReturningOld(tx, ty, tz, place);
+		                    lighting.onBlockChanged(world, tx, ty, tz, old, place);
+		                    world.markDirtyAtBlock(tx, ty, tz);
+
+		                    System.out.println("torch placed"); // torch placed; done
+		                }
+
+		                // --- Your existing plant placement restriction ---
+		                short below = world.getBlock(tx, ty - 1, tz);
+		                if ((Blocks.isPlant(place) && Blocks.canPlantGrowOn(below)) || !Blocks.isPlant(place)) {
+		                    short old = world.placeBlockReturningOld(tx, ty, tz, place);
+		                    lighting.onBlockChanged(world, tx, ty, tz, old, place);
+		                    world.markDirtyAtBlock(tx, ty, tz);
+		                }
+		            }
 		        }
 		    }
 		}

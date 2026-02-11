@@ -52,6 +52,13 @@ public class Mesher {
 						emitCrossPlant(world, cutout, wx, wy, wz, packed, atlasW, atlasH, tileSizePx);
 						continue;
 					}
+					
+					// --- TORCH special mesh (small cuboid) ---
+					if (Blocks.isTorch(packed)) {
+					    // Torches are alpha-cutout (like plants), not translucent blending.
+					    emitTorch(world, cutout, wx, wy, wz, packed, atlasW, atlasH, tileSizePx);
+					    continue;
+					}
 
 					// --- Normal cube block ---
 					boolean inTranslucentPass = Blocks.isTranslucent(packed);
@@ -453,4 +460,411 @@ public class Mesher {
 
 	    return new float[]{ u0, v0, u1, v1 };
 	}
+	
+	private void emitTorch(World world, ArrayList<Float> out, int bx, int by, int bz, short blockPacked,
+	        int atlasW, int atlasH, int tileSizePx) {
+
+	    int state = BlockData.state(blockPacked) & 0xF;
+
+	    // Light (same as before)
+	    int L = world.getCombinedLight(bx, by, bz);
+	    float light01 = (L / 15.0f);
+	    float minLight = 0.20f;
+	    light01 = minLight + (1.0f - minLight) * light01;
+
+	    BlockType bt = Blocks.get(blockPacked);
+	    if (bt == null) return;
+
+	    // Use top-face tile by convention
+	    int tileX = bt.tileX(2);
+	    int tileY = bt.tileY(2);
+
+	    // Full tile UV (inner padded)
+	    float[] uv = tileUV_Padded(tileX, tileY, atlasW, atlasH, tileSizePx, 8);
+	    float U0 = uv[0], V0 = uv[1], U1 = uv[2], V1 = uv[3];
+
+	    // --- USE YOUR EXISTING "correct" torch sub-UV computation here ---
+	    // You said it's correct now, so keep it.
+	    // These must represent the right 2x10 strip for the sides, and small caps for top/bottom:
+	    float sideU0, sideV0, sideU1, sideV1;
+	    float topU0,  topV0,  topU1,  topV1;
+	    float botU0,  botV0,  botU1,  botV1;
+
+	    {
+	        float du = (U1 - U0) / 16.0f;
+	        float dv = (V1 - V0) / 16.0f;
+
+	        // IMPORTANT: keep the version that made your torch correct (including any V flipping you applied).
+	        // Example (edit if your "correct" version differs):
+	        sideU0 = U0 + 7 * du;
+	        sideU1 = U0 + 9 * du;
+
+	        // If your pipeline required flipped V, you'd have had something like:
+	        // sideV0 = V1 - 16 * dv; sideV1 = V1 - 6 * dv;
+	        // Otherwise:
+	        sideV0 = V0 + 0 * dv;
+	        sideV1 = V0 + 10 * dv;
+
+	        // Caps (2px wide, 2px tall — choose rows that look decent)
+	        topU0 = sideU0; topU1 = sideU1;
+	        botU0 = sideU0; botU1 = sideU1;
+
+	        topV0 = V0 + 8 * dv;
+	        topV1 = V0 + 10 * dv;
+
+	        botV0 = V0 + 0 * dv;
+	        botV1 = V0 + 2 * dv;
+	    }
+
+	    float halfW = 1f / 16f;     // thickness (2/16 total)
+	    float h     = 10f / 16f;
+
+	    float baseY = by - 0.5f;
+
+	    if (state == Blocks.TORCH_FLOOR) {
+	        // Upright centered torch (your previous working geometry)
+	        float cx = bx;
+	        float cz = bz;
+
+	        float x0 = cx - halfW, x1 = cx + halfW;
+	        float z0 = cz - halfW, z1 = cz + halfW;
+	        float y0 = baseY;
+	        float y1 = y0 + h;
+
+	        for (int face = 0; face < 6; face++) {
+	            float fu0, fv0, fu1, fv1;
+	            if (face == 2) { fu0 = topU0; fv0 = topV0; fu1 = topU1; fv1 = topV1; }
+	            else if (face == 3) { fu0 = botU0; fv0 = botV0; fu1 = botU1; fv1 = botV1; }
+	            else { fu0 = sideU0; fv0 = sideV0; fu1 = sideU1; fv1 = sideV1; }
+
+	            emitFaceBounds(out, x0, x1, y0, y1, z0, z1, face, fu0, fv0, fu1, fv1, light01);
+	        }
+	        return;
+	    }
+
+	 // --- Wall torch: rigid rotation (no shear) ---
+	    float dirX = 0f, dirZ = 0f;
+	    switch (state) {
+	        case Blocks.TORCH_WEST  -> dirX = +1f;
+	        case Blocks.TORCH_EAST  -> dirX = -1f;
+	        case Blocks.TORCH_NORTH -> dirZ = +1f;
+	        case Blocks.TORCH_SOUTH -> dirZ = -1f;
+	        default -> {}
+	    }
+
+	    // Tuning knobs
+	    float lift = 3f / 16f;          // raise off ground
+	    float wallInset = 8f / 16f;     // how close to the wall (pivot point offset)
+	    float tiltDeg = 22.5f;          // minecraft-ish tilt
+
+	    baseY = by - 0.5f;
+
+	    // Pivot (where torch is "attached"); near the wall, lifted up
+	    float px = bx - dirX * wallInset;
+	    float py = baseY + lift;
+	    float pz = bz - dirZ * wallInset;
+
+	    // Build an upright torch prism in local space around pivot
+	    halfW = 1f / 16f;         // 2/16 total width
+	    h     = 10f / 16f;        // height
+
+	    // bottom and top centers (upright, before rotation)
+	    float c0x = px, c0y = py,     c0z = pz;
+	    float c1x = px, c1y = py + h, c1z = pz;
+
+	    // Build 8 corners for upright prism
+	    float[] b00 = new float[]{ c0x - halfW, c0y, c0z - halfW };
+	    float[] b10 = new float[]{ c0x + halfW, c0y, c0z - halfW };
+	    float[] b11 = new float[]{ c0x + halfW, c0y, c0z + halfW };
+	    float[] b01 = new float[]{ c0x - halfW, c0y, c0z + halfW };
+
+	    float[] t00 = new float[]{ c1x - halfW, c1y, c1z - halfW };
+	    float[] t10 = new float[]{ c1x + halfW, c1y, c1z - halfW };
+	    float[] t11 = new float[]{ c1x + halfW, c1y, c1z + halfW };
+	    float[] t01 = new float[]{ c1x - halfW, c1y, c1z + halfW };
+
+	    // Rotate EVERYTHING around pivot so the torch leans away from the wall
+	    float[] axis = new float[]{ dirZ, 0f, -dirX }; // axis = cross(outward, up)
+	    normalize3(axis);
+
+	    float tiltRad = (float) Math.toRadians(tiltDeg);
+
+	    // rotate around pivot point (px,py,pz)
+	    rotateAroundAxis(b00, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+	    rotateAroundAxis(b10, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+	    rotateAroundAxis(b11, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+	    rotateAroundAxis(b01, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+
+	    rotateAroundAxis(t00, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+	    rotateAroundAxis(t10, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+	    rotateAroundAxis(t11, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+	    rotateAroundAxis(t01, px, py, pz, axis[0], axis[1], axis[2], tiltRad);
+
+	    // Emit prism from rotated corners (caps are now tilted too)
+	    emitPrismFromCorners(out,
+	            b00,b10,b11,b01,
+	            t00,t10,t11,t01,
+	            sideU0, sideV0, sideU1, sideV1,
+	            topU0,  topV0,  topU1,  topV1,
+	            botU0,  botV0,  botU1,  botV1,
+	            light01);
+	}
+
+	
+	private void emitFaceBounds(ArrayList<Float> out,
+	        float x0, float x1, float y0, float y1, float z0, float z1,
+	        int face,
+	        float u0, float v0, float u1, float v1,
+	        float light01) {
+
+	    float nx = NORMALS[face][0];
+	    float ny = NORMALS[face][1];
+	    float nz = NORMALS[face][2];
+
+	    float[] p0, p1, p2, p3;
+	    switch (face) {
+	    case 0 -> { // +X
+	        p0 = new float[] { x1, y0, z0 };
+	        p1 = new float[] { x1, y0, z1 };
+	        p2 = new float[] { x1, y1, z1 };
+	        p3 = new float[] { x1, y1, z0 };
+	    }
+	    case 1 -> { // -X
+	        p0 = new float[] { x0, y0, z1 };
+	        p1 = new float[] { x0, y0, z0 };
+	        p2 = new float[] { x0, y1, z0 };
+	        p3 = new float[] { x0, y1, z1 };
+	    }
+	    case 2 -> { // +Y
+	        p0 = new float[] { x0, y1, z0 };
+	        p1 = new float[] { x1, y1, z0 };
+	        p2 = new float[] { x1, y1, z1 };
+	        p3 = new float[] { x0, y1, z1 };
+	    }
+	    case 3 -> { // -Y
+	        p0 = new float[] { x0, y0, z1 };
+	        p1 = new float[] { x1, y0, z1 };
+	        p2 = new float[] { x1, y0, z0 };
+	        p3 = new float[] { x0, y0, z0 };
+	    }
+	    case 4 -> { // +Z
+	        p0 = new float[] { x0, y0, z1 };
+	        p1 = new float[] { x0, y1, z1 };
+	        p2 = new float[] { x1, y1, z1 };
+	        p3 = new float[] { x1, y0, z1 };
+	    }
+	    case 5 -> { // -Z
+	        p0 = new float[] { x1, y0, z0 };
+	        p1 = new float[] { x1, y1, z0 };
+	        p2 = new float[] { x0, y1, z0 };
+	        p3 = new float[] { x0, y0, z0 };
+	    }
+	    default -> throw new IllegalArgumentException("face " + face);
+	    }
+
+	    // Same UV orientation rules as your cube emitter
+	    float p0u=0,p0v=0,p1u=0,p1v=0,p2u=0,p2v=0,p3u=0,p3v=0;
+
+	    switch (face) {
+	    case 0 -> { p0u=u0; p0v=v0; p1u=u1; p1v=v0; p2u=u1; p2v=v1; p3u=u0; p3v=v1; }
+	    case 1 -> { p1u=u0; p1v=v0; p0u=u1; p0v=v0; p3u=u1; p3v=v1; p2u=u0; p2v=v1; }
+	    case 4 -> { p0u=u0; p0v=v0; p3u=u1; p3v=v0; p2u=u1; p2v=v1; p1u=u0; p1v=v1; }
+	    case 5 -> { p0u=u0; p0v=v0; p3u=u1; p3v=v0; p2u=u1; p2v=v1; p1u=u0; p1v=v1; }
+	    case 2 -> { p0u=u0; p0v=v1; p1u=u1; p1v=v1; p2u=u1; p2v=v0; p3u=u0; p3v=v0; }
+	    case 3 -> { p3u=u0; p3v=v1; p2u=u1; p2v=v1; p1u=u1; p1v=v0; p0u=u0; p0v=v0; }
+	    }
+
+	    // same triangle order as emitFace()
+	    push(out, p0, nx, ny, nz, p0u, p0v, light01);
+	    push(out, p2, nx, ny, nz, p2u, p2v, light01);
+	    push(out, p1, nx, ny, nz, p1u, p1v, light01);
+
+	    push(out, p0, nx, ny, nz, p0u, p0v, light01);
+	    push(out, p3, nx, ny, nz, p3u, p3v, light01);
+	    push(out, p2, nx, ny, nz, p2u, p2v, light01);
+	}
+	
+	private void emitSideQuadAuto(ArrayList<Float> out,
+	        float[] b0, float[] b1, float[] t1, float[] t0,   // bottom edge then top edge
+	        float u0, float v0, float u1, float v1,
+	        float light01,
+	        float centerX, float centerY, float centerZ) {
+
+	    // Corner convention for UVs:
+	    // p0=b0 (bottom-left), p1=b1 (bottom-right), p2=t1 (top-right), p3=t0 (top-left)
+	    float[] p0 = b0, p1 = b1, p2 = t1, p3 = t0;
+
+	    // Compute normal for the SAME winding your cube emitter uses: (p0,p2,p1)
+	    float ax = p2[0] - p0[0], ay = p2[1] - p0[1], az = p2[2] - p0[2];
+	    float bx = p1[0] - p0[0], by = p1[1] - p0[1], bz = p1[2] - p0[2];
+
+	    float nx = ay * bz - az * by;
+	    float ny = az * bx - ax * bz;
+	    float nz = ax * by - ay * bx;
+
+	    float nLen = (float)Math.sqrt(nx*nx + ny*ny + nz*nz);
+	    if (nLen > 1e-8f) { nx /= nLen; ny /= nLen; nz /= nLen; }
+	    else { nx = 0; ny = 1; nz = 0; }
+
+	    // Outward direction = from prism center to quad center
+	    float mx = 0.25f * (p0[0] + p1[0] + p2[0] + p3[0]);
+	    float my = 0.25f * (p0[1] + p1[1] + p2[1] + p3[1]);
+	    float mz = 0.25f * (p0[2] + p1[2] + p2[2] + p3[2]);
+
+	    float ox = mx - centerX;
+	    float oy = my - centerY;
+	    float oz = mz - centerZ;
+
+	    float oLen = (float)Math.sqrt(ox*ox + oy*oy + oz*oz);
+	    if (oLen > 1e-8f) { ox /= oLen; oy /= oLen; oz /= oLen; }
+
+	    // If normal points inward, flip winding by flipping TRIANGLE INDICES (not vertices)
+	    boolean flip = (nx*ox + ny*oy + nz*oz) < 0.0f;
+
+	    // UVs tied to corners (won't rotate if we flip indices)
+	    float p0u = u0, p0v = v0;
+	    float p1u = u1, p1v = v0;
+	    float p2u = u1, p2v = v1;
+	    float p3u = u0, p3v = v1;
+
+	    if (!flip) {
+	        // Cube-style winding
+	        push(out, p0, nx, ny, nz, p0u, p0v, light01);
+	        push(out, p2, nx, ny, nz, p2u, p2v, light01);
+	        push(out, p1, nx, ny, nz, p1u, p1v, light01);
+
+	        push(out, p0, nx, ny, nz, p0u, p0v, light01);
+	        push(out, p3, nx, ny, nz, p3u, p3v, light01);
+	        push(out, p2, nx, ny, nz, p2u, p2v, light01);
+	    } else {
+	        // Flipped winding (swap indices only) — UV stays correct
+	        push(out, p0, -nx, -ny, -nz, p0u, p0v, light01);
+	        push(out, p1, -nx, -ny, -nz, p1u, p1v, light01);
+	        push(out, p2, -nx, -ny, -nz, p2u, p2v, light01);
+
+	        push(out, p0, -nx, -ny, -nz, p0u, p0v, light01);
+	        push(out, p2, -nx, -ny, -nz, p2u, p2v, light01);
+	        push(out, p3, -nx, -ny, -nz, p3u, p3v, light01);
+	    }
+	}
+	
+	private static void rotateAroundAxis(float[] p,
+	        float ox, float oy, float oz,
+	        float ax, float ay, float az,
+	        float angleRad) {
+
+	    // translate to origin
+	    float x = p[0] - ox;
+	    float y = p[1] - oy;
+	    float z = p[2] - oz;
+
+	    float c = (float)Math.cos(angleRad);
+	    float s = (float)Math.sin(angleRad);
+
+	    // Rodrigues' rotation formula
+	    float dot = ax*x + ay*y + az*z;
+
+	    float rx = x*c + (ay*z - az*y)*s + ax*dot*(1f - c);
+	    float ry = y*c + (az*x - ax*z)*s + ay*dot*(1f - c);
+	    float rz = z*c + (ax*y - ay*x)*s + az*dot*(1f - c);
+
+	    // translate back
+	    p[0] = rx + ox;
+	    p[1] = ry + oy;
+	    p[2] = rz + oz;
+	}
+
+	private static void normalize3(float[] v) {
+	    float len = (float)Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	    if (len > 1e-8f) {
+	        v[0] /= len; v[1] /= len; v[2] /= len;
+	    }
+	}
+
+	private void emitPrismFromCorners(ArrayList<Float> out,
+	        float[] b00, float[] b10, float[] b11, float[] b01,
+	        float[] t00, float[] t10, float[] t11, float[] t01,
+	        float sideU0, float sideV0, float sideU1, float sideV1,
+	        float topU0,  float topV0,  float topU1,  float topV1,
+	        float botU0,  float botV0,  float botU1,  float botV1,
+	        float light01) {
+
+	    // center for outward check (average of all 8 corners)
+	    float cx = (b00[0]+b10[0]+b11[0]+b01[0]+t00[0]+t10[0]+t11[0]+t01[0]) / 8f;
+	    float cy = (b00[1]+b10[1]+b11[1]+b01[1]+t00[1]+t10[1]+t11[1]+t01[1]) / 8f;
+	    float cz = (b00[2]+b10[2]+b11[2]+b01[2]+t00[2]+t10[2]+t11[2]+t01[2]) / 8f;
+
+	    // sides (bottom edge then matching top edge)
+	    emitSideQuadAuto(out, b10, b00, t00, t10, sideU0, sideV0, sideU1, sideV1, light01, cx, cy, cz);
+	    emitSideQuadAuto(out, b00, b01, t01, t00, sideU0, sideV0, sideU1, sideV1, light01, cx, cy, cz);
+	    emitSideQuadAuto(out, b01, b11, t11, t01, sideU0, sideV0, sideU1, sideV1, light01, cx, cy, cz);
+	    emitSideQuadAuto(out, b11, b10, t10, t11, sideU0, sideV0, sideU1, sideV1, light01, cx, cy, cz);
+
+	    // caps — use the same auto-winding logic so culling stays correct.
+	    emitQuadAuto(out, t00, t01, t11, t10, topU0, topV0, topU1, topV1, light01, cx, cy, cz);
+	    emitQuadAuto(out, b00, b10, b11, b01, botU0, botV0, botU1, botV1, light01, cx, cy, cz);
+	}
+
+	private void emitQuadAuto(ArrayList<Float> out,
+	        float[] p0, float[] p1, float[] p2, float[] p3,
+	        float u0, float v0, float u1, float v1,
+	        float light01,
+	        float centerX, float centerY, float centerZ) {
+
+	    // Compute normal matching your cube winding: (p0, p2, p1)
+	    float ax = p2[0] - p0[0], ay = p2[1] - p0[1], az = p2[2] - p0[2];
+	    float bx = p1[0] - p0[0], by = p1[1] - p0[1], bz = p1[2] - p0[2];
+
+	    float nx = ay * bz - az * by;
+	    float ny = az * bx - ax * bz;
+	    float nz = ax * by - ay * bx;
+
+	    float nLen = (float) Math.sqrt(nx*nx + ny*ny + nz*nz);
+	    if (nLen > 1e-8f) { nx /= nLen; ny /= nLen; nz /= nLen; }
+	    else { nx = 0; ny = 1; nz = 0; }
+
+	    // Quad center and outward test vector (from prism center to quad center)
+	    float mx = 0.25f * (p0[0] + p1[0] + p2[0] + p3[0]);
+	    float my = 0.25f * (p0[1] + p1[1] + p2[1] + p3[1]);
+	    float mz = 0.25f * (p0[2] + p1[2] + p2[2] + p3[2]);
+
+	    float ox = mx - centerX;
+	    float oy = my - centerY;
+	    float oz = mz - centerZ;
+
+	    float oLen = (float) Math.sqrt(ox*ox + oy*oy + oz*oz);
+	    if (oLen > 1e-8f) { ox /= oLen; oy /= oLen; oz /= oLen; }
+
+	    boolean flip = (nx*ox + ny*oy + nz*oz) < 0.0f;
+
+	    // UVs bound to corners (p0 bottom-left, p1 bottom-right, p2 top-right, p3 top-left)
+	    float p0u = u0, p0v = v0;
+	    float p1u = u1, p1v = v0;
+	    float p2u = u1, p2v = v1;
+	    float p3u = u0, p3v = v1;
+
+	    if (!flip) {
+	        // canonical winding (matches your cube emitter)
+	        push(out, p0, nx, ny, nz, p0u, p0v, light01);
+	        push(out, p2, nx, ny, nz, p2u, p2v, light01);
+	        push(out, p1, nx, ny, nz, p1u, p1v, light01);
+
+	        push(out, p0, nx, ny, nz, p0u, p0v, light01);
+	        push(out, p3, nx, ny, nz, p3u, p3v, light01);
+	        push(out, p2, nx, ny, nz, p2u, p2v, light01);
+	    } else {
+	        // flipped indices (negate normal so lighting stays outward)
+	        push(out, p0, -nx, -ny, -nz, p0u, p0v, light01);
+	        push(out, p1, -nx, -ny, -nz, p1u, p1v, light01);
+	        push(out, p2, -nx, -ny, -nz, p2u, p2v, light01);
+
+	        push(out, p0, -nx, -ny, -nz, p0u, p0v, light01);
+	        push(out, p2, -nx, -ny, -nz, p2u, p2v, light01);
+	        push(out, p3, -nx, -ny, -nz, p3u, p3v, light01);
+	    }
+	}
+
+
+
+
 }
