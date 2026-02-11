@@ -366,6 +366,7 @@ public class Blocks {
     	if (k== GLASS_KIND) return SoundMaterial.GLASS;
     	if (k== SAND_KIND) return SoundMaterial.SAND;
     	if (isPlant(id)) return SoundMaterial.PLANT;
+    	if (k== AIR_KIND) return SoundMaterial.AIR;
     	return SoundMaterial.STONE;   	
     }
 

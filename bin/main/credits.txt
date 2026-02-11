@@ -15,3 +15,4 @@ SOUNDS
 -dirt_step_1 by Ali_6868 on Freesound, under CC0
 -dirt_step_2 by simonjeffery13 on Freesound, under CC0
 -stone step sounds by Fission9 on Freesound, under CC0
+-sand step sounds by Cheeseheadburger on Freesound, under CC-BY 4.0

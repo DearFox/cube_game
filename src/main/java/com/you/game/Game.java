@@ -301,6 +301,8 @@ public class Game {
 			        List.of("sand_step_1","sand_step_2"), base);
 			blockSounds.register(SoundMaterial.PLANT, BlockSoundAction.STEP,
 			        List.of("plant_step_1","plant_step_2"), base);
+			blockSounds.register(SoundMaterial.AIR, BlockSoundAction.STEP,
+			        List.of("silence"), base);
 	    }
 	    catch (Exception e){
 	    	System.out.println(e);
