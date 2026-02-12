@@ -64,6 +64,17 @@ public class World {
         	destroyBlockReturningOld(bx,by+1,bz,Blocks.AIR);
         	//setBlock(bx,by+1,bz,Blocks.AIR);
         }
+     // --- unsupported torch breaking (NEW) ---
+        // When a block changes, it may no longer support torches attached to it.
+        // Check the 5 neighbor positions where a torch could be supported by (bx,by,bz):
+        // 1) torch above (floor torch)
+        // 2-5) torches on the four sides (wall torches)
+        breakUnsupportedTorchAt(bx, by + 1, bz); // floor torch depends on (bx,by,bz)
+
+        breakUnsupportedTorchAt(bx - 1, by, bz); // torch at west may depend on this block (east wall)
+        breakUnsupportedTorchAt(bx + 1, by, bz); // torch at east may depend on this block (west wall)
+        breakUnsupportedTorchAt(bx, by, bz - 1); // torch at north may depend on this block (south wall)
+        breakUnsupportedTorchAt(bx, by, bz + 1); // torch at south may depend on this block (north wall)
     }
 
     public int getSkyLight(int bx, int by, int bz) {
@@ -225,6 +236,29 @@ public class World {
     
     public void setBlockSoundRegistry(BlockSoundRegistry reg) {
         this.blockSounds = reg;
+    }
+    
+    private void breakUnsupportedTorchAt(int tx, int ty, int tz) {
+        short t = getBlock(tx, ty, tz);
+        if (!Blocks.isTorch(t)) return;
+
+        int state = BlockData.state(t) & 0xF;
+
+        // Determine required support block position for this torch state
+        int sx = tx, sy = ty, sz = tz;
+        switch (state) {
+            case Blocks.TORCH_FLOOR -> { sy = ty - 1; }
+            case Blocks.TORCH_WEST  -> { sx = tx - 1; } // wall block is west of torch
+            case Blocks.TORCH_EAST  -> { sx = tx + 1; }
+            case Blocks.TORCH_NORTH -> { sz = tz - 1; }
+            case Blocks.TORCH_SOUTH -> { sz = tz + 1; }
+            default -> { sy = ty - 1; } // safe fallback
+        }
+
+        // If the supporting block isn't solid anymore, break the torch
+        if (!isSolidBlock(sx, sy, sz)) {
+            destroyBlockReturningOld(tx, ty, tz, Blocks.AIR);
+        }
     }
 
 }
