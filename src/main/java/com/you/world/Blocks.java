@@ -29,6 +29,8 @@ public class Blocks {
     public static final int PLANT_GOLD_POPPY_KIND = 14;
     public static final int COBBLESTONE_KIND = 15;
     public static final int TORCH_KIND = 16;
+    public static final int PLANKS_OAK_KIND = 17;
+
 
     // Packed default values (kind + state 0)
     public static final short AIR   = BlockData.pack(AIR_KIND, 0);
@@ -48,6 +50,7 @@ public class Blocks {
     public static final short PLANT_GOLD_POPPY = BlockData.pack(PLANT_GOLD_POPPY_KIND, 0);
     public static final short COBBLESTONE = BlockData.pack(COBBLESTONE_KIND, 0);
     public static final short TORCH = BlockData.pack(TORCH_KIND, 0);
+    public static final short PLANKS_OAK = BlockData.pack(PLANKS_OAK_KIND, 0);
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
@@ -202,6 +205,13 @@ public class Blocks {
         		torch[0], torch[1], torch[0], torch[1],
         		torch[0], torch[1], torch[0], torch[1],
         		torch[0], torch[1], torch[0], torch[1]
+        ));
+        
+        int[] oak_planks = t("oak_planks");
+        register(new BlockType(PLANKS_OAK_KIND, "sand", true,
+        		oak_planks[0], oak_planks[1], oak_planks[0], oak_planks[1],
+        		oak_planks[0], oak_planks[1], oak_planks[0], oak_planks[1],
+        		oak_planks[0], oak_planks[1], oak_planks[0], oak_planks[1]
         ));
     }
 
@@ -390,6 +400,8 @@ public class Blocks {
     	if (k== SAND_KIND) return SoundMaterial.SAND;
     	if (isPlant(id)) return SoundMaterial.PLANT;
     	if (k== AIR_KIND) return SoundMaterial.AIR;
+    	if (k== PLANKS_OAK_KIND) return SoundMaterial.WOOD;
+    	if (k== TORCH_KIND) return SoundMaterial.WOOD;
     	return SoundMaterial.STONE;   	
     }
     

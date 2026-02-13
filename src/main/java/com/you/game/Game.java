@@ -346,6 +346,10 @@ public class Game {
 			        List.of("plant_place_1","plant_place_2"), base);
 			blockSounds.register(SoundMaterial.PLANT, BlockSoundAction.BREAK,
 			        List.of("plant_break_1", "plant_break_2"), base);
+			blockSounds.register(SoundMaterial.WOOD, BlockSoundAction.PLACE,
+			        List.of("wood_place_1","wood_place_2"), base);
+			blockSounds.register(SoundMaterial.WOOD, BlockSoundAction.BREAK,
+			        List.of("wood_break_1", "wood_break_2"), base);
 			
 			blockSounds.register(SoundMaterial.GRASS, BlockSoundAction.STEP,
 			        List.of("grass_step_1","grass_step_2","grass_step_3"), base);
@@ -361,6 +365,8 @@ public class Game {
 			        List.of("plant_step_1","plant_step_2"), base);
 			blockSounds.register(SoundMaterial.AIR, BlockSoundAction.STEP,
 			        List.of("silence"), base);
+			blockSounds.register(SoundMaterial.WOOD, BlockSoundAction.STEP,
+			        List.of("wood_step_1","wood_step_2","wood_step_3","wood_step_4"), base);
 	    }
 	    catch (Exception e){
 	    	System.out.println(e);

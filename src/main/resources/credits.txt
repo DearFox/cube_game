@@ -1,6 +1,7 @@
 IMAGES
 -Triteleia and tall grass by me
--stone by JoeEnderman
+-stone by JoeEnderman under CC0
+-wood planks by JoeEnderman under CC0
 -Other blocks by ARoachIFoundOnMyPillow, under CC0
 SOUNDS
 -glass_break_1 by C_Rogers on Freesound.org, under CC0
@@ -16,3 +17,4 @@ SOUNDS
 -dirt_step_2 by simonjeffery13 on Freesound, under CC0
 -stone step sounds by Fission9 on Freesound, under CC0
 -sand step sounds by Cheeseheadburger on Freesound, under CC-BY 4.0
+-wood place/break by me
