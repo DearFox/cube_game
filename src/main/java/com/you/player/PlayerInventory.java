@@ -52,6 +52,7 @@ public class PlayerInventory {
         creativeEntries.add(Blocks.PLANT_GOLD_POPPY);
         creativeEntries.add(Blocks.TORCH);
         creativeEntries.add(Blocks.PLANKS_OAK);
+        creativeEntries.add(BlockData.pack(Blocks.LOG_OAK_KIND, Blocks.LOG_AXIS_Y));
     }
 
     public ItemStack getSelected() {

@@ -18,3 +18,4 @@ SOUNDS
 -stone step sounds by Fission9 on Freesound, under CC0
 -sand step sounds by Cheeseheadburger on Freesound, under CC-BY 4.0
 -wood place/break by me
+-wood footstep sounds by florianreichelt on Freesound, under CC0

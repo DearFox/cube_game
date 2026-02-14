@@ -294,6 +294,38 @@ public class Game {
 
 		            return; // IMPORTANT: don't fall through and place again
 		        }
+		     // --- LOG SPECIAL PLACEMENT (NEW) ---
+		        if (Blocks.isLog(place)) {
+
+		            int axis = Blocks.LOG_AXIS_Y; // default
+
+		            if (!replacing) {
+		                int dx = px - hx;
+		                int dy = py - hy;
+		                int dz = pz - hz;
+
+		                // dx/dy/dz tells us which face we placed against -> axis matches that face normal
+		                if (dx != 0) axis = Blocks.LOG_AXIS_X;
+		                else if (dz != 0) axis = Blocks.LOG_AXIS_Z;
+		                else axis = Blocks.LOG_AXIS_Y; // dy != 0
+		            } else {
+		                // When replacing (e.g. grass), px==hx etc so we can't infer the face from dx/dy/dz.
+		                // Fallback: choose dominant axis from camera forward (feels good in practice).
+		                var f = camera.getForward();
+		                float ax = Math.abs(f.x), ay = Math.abs(f.y), az = Math.abs(f.z);
+		                if (ax >= ay && ax >= az) axis = Blocks.LOG_AXIS_X;
+		                else if (az >= ax && az >= ay) axis = Blocks.LOG_AXIS_Z;
+		                else axis = Blocks.LOG_AXIS_Y;
+		            }
+
+		            short packedLog = Blocks.withLogAxis(place, axis);
+
+		            short old = world.placeBlockReturningOld(tx, ty, tz, packedLog);
+		            lighting.onBlockChanged(world, tx, ty, tz, old, packedLog);
+		            world.markDirtyAtBlock(tx, ty, tz);
+
+		            return;
+		        }
 
 		        // --- Existing plant placement restriction (unchanged) ---
 		        short below = world.getBlock(tx, ty - 1, tz);

@@ -30,6 +30,7 @@ public class Blocks {
     public static final int COBBLESTONE_KIND = 15;
     public static final int TORCH_KIND = 16;
     public static final int PLANKS_OAK_KIND = 17;
+    public static final int LOG_OAK_KIND = 18;
 
 
     // Packed default values (kind + state 0)
@@ -54,6 +55,8 @@ public class Blocks {
 
     private static final int MAX_KINDS = 4096; // matches 12-bit kind
     private static final BlockType[] byKind = new BlockType[MAX_KINDS];
+ // NEW: optional per-packed overrides (keyed by full 16-bit packed value)
+    private static final BlockType[] byPacked = new BlockType[1 << 16];
     
  // Torch states stored in BlockData.state(packed) (0..15 available)
     public static final int TORCH_FLOOR = 0;
@@ -61,12 +64,19 @@ public class Blocks {
     public static final int TORCH_EAST  = 2; // wall is +X, torch leans -X
     public static final int TORCH_NORTH = 3; // wall is -Z, torch leans +Z
     public static final int TORCH_SOUTH = 4; // wall is +Z, torch leans -Z
+    //log axes
+    public static final int LOG_AXIS_Y = 0;
+    public static final int LOG_AXIS_X = 1;
+    public static final int LOG_AXIS_Z = 2;
 
     // Return the BlockType for a packed short (or null if unknown)
     public static BlockType get(short packed) {
-        int kind = BlockData.kind(packed);
-        if (kind < 0 || kind >= MAX_KINDS) return null;
-        return byKind[kind];
+        BlockType v = byPacked[packed & 0xFFFF];
+        if (v != null) return v;
+
+        int k = BlockData.kind(packed);
+        if (k < 0 || k >= MAX_KINDS) return null;
+        return byKind[k];
     }
 
     // Return by kind id
@@ -213,12 +223,64 @@ public class Blocks {
         		oak_planks[0], oak_planks[1], oak_planks[0], oak_planks[1],
         		oak_planks[0], oak_planks[1], oak_planks[0], oak_planks[1]
         ));
+        int[] logSide = t("oak_log_side");
+        int[] logEnd  = t("oak_log_top");
+
+        // Base kind (fallback): pick Y (vertical)
+        register(new BlockType(LOG_OAK_KIND, "log", true,
+                logSide[0], logSide[1],   // +X
+                logSide[0], logSide[1],   // -X
+                logEnd[0],  logEnd[1],    // +Y
+                logEnd[0],  logEnd[1],    // -Y
+                logSide[0], logSide[1],   // +Z
+                logSide[0], logSide[1]    // -Z
+        ));
+
+        // Packed base for this kind (state will be overwritten)
+        short baseLog = BlockData.pack(LOG_OAK_KIND, 0);
+
+        // State 0: Y axis (ends on +/-Y)
+        registerPacked(withLogAxis(baseLog, LOG_AXIS_Y),
+                new BlockType(LOG_OAK_KIND, "log_y", true,
+                        logSide[0], logSide[1],   // +X
+                        logSide[0], logSide[1],   // -X
+                        logEnd[0],  logEnd[1],    // +Y end
+                        logEnd[0],  logEnd[1],    // -Y end
+                        logSide[0], logSide[1],   // +Z
+                        logSide[0], logSide[1]    // -Z
+                ));
+
+        // State 1: X axis (ends on +/-X)
+        registerPacked(withLogAxis(baseLog, LOG_AXIS_X),
+                new BlockType(LOG_OAK_KIND, "log_x", true,
+                        logEnd[0],  logEnd[1],    // +X end
+                        logEnd[0],  logEnd[1],    // -X end
+                        logSide[0], logSide[1],   // +Y
+                        logSide[0], logSide[1],   // -Y
+                        logSide[0], logSide[1],   // +Z
+                        logSide[0], logSide[1]    // -Z
+                ));
+
+        // State 2: Z axis (ends on +/-Z)
+        registerPacked(withLogAxis(baseLog, LOG_AXIS_Z),
+                new BlockType(LOG_OAK_KIND, "log_z", true,
+                        logSide[0], logSide[1],   // +X
+                        logSide[0], logSide[1],   // -X
+                        logSide[0], logSide[1],   // +Y
+                        logSide[0], logSide[1],   // -Y
+                        logEnd[0],  logEnd[1],    // +Z end
+                        logEnd[0],  logEnd[1]     // -Z end
+                ));
     }
 
     private static void register(BlockType t) {
         int k = t.id();
         if (k < 0 || k >= MAX_KINDS) throw new IllegalArgumentException("Block kind out of range: " + k);
         byKind[k] = t;
+    }
+    
+    private static void registerPacked(short packed, BlockType t) {
+        byPacked[packed & 0xFFFF] = t;
     }
 
  // -------- Atlas mapping (name -> tileX,tileY) --------
@@ -402,6 +464,7 @@ public class Blocks {
     	if (k== AIR_KIND) return SoundMaterial.AIR;
     	if (k== PLANKS_OAK_KIND) return SoundMaterial.WOOD;
     	if (k== TORCH_KIND) return SoundMaterial.WOOD;
+    	if (k== LOG_OAK_KIND) return SoundMaterial.WOOD;
     	return SoundMaterial.STONE;   	
     }
     
@@ -412,5 +475,60 @@ public class Blocks {
     public static short withTorchState(short packed, int state) {
         return BlockData.withState(packed, state);
     }
+    
+    public static boolean isLog(short packed) {
+        // however you classify blocks; placeholder:
+    	 return BlockData.kind(packed) == LOG_OAK_KIND;
+    }
+    
+    public static int logAxis(short packed) {
+        return BlockData.state(packed) & 0xF;
+    }
 
+    public static short withLogAxis(short packed, int axis) {
+        return BlockData.withState(packed, axis);
+    }
+
+ // face indices: 0=+X, 1=-X, 2=+Y, 3=-Y, 4=+Z, 5=-Z
+    private static BlockType makeLogType(int id, String name, boolean solid,
+                                         int axis, // Blocks.LOG_AXIS_X/Y/Z
+                                         int sideX, int sideY,
+                                         int endX,  int endY) {
+
+        // Default all faces to SIDE
+        int px = sideX, py = sideY; // +X
+        int nx = sideX, ny = sideY; // -X
+        int ux = sideX, uy = sideY; // +Y
+        int dx = sideX, dy = sideY; // -Y
+        int fzx = sideX, fzy = sideY; // +Z
+        int bzx = sideX, bzy = sideY; // -Z
+
+        // Overwrite the two "end" faces based on axis
+        switch (axis) {
+            case LOG_AXIS_X -> { // ends on +/-X
+                px = endX; py = endY;
+                nx = endX; ny = endY;
+            }
+            case LOG_AXIS_Y -> { // ends on +/-Y
+                ux = endX; uy = endY;
+                dx = endX; dy = endY;
+            }
+            case LOG_AXIS_Z -> { // ends on +/-Z
+                fzx = endX; fzy = endY;
+                bzx = endX; bzy = endY;
+            }
+            default -> throw new IllegalArgumentException("bad log axis " + axis);
+        }
+
+        return new BlockType(
+                id, name, solid,
+                px, py,
+                nx, ny,
+                ux, uy,
+                dx, dy,
+                fzx, fzy,
+                bzx, bzy
+        );
+    }
+    
 }
