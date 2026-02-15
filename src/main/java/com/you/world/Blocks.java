@@ -304,7 +304,6 @@ public class Blocks {
 
      // LOG_WEST (-X): flip from EAST
      apply.accept(pWest, new int[]{0,0,3,1,3,1});
-     
 
      // LOG_SOUTH (+Z): ends are faces 4/5, rotate the other four faces so bark points +Z
      apply.accept(pSouth,new int[]{1,3,1,3,0,0});
@@ -533,7 +532,25 @@ public class Blocks {
     public static int uvRot(short packed, int face) {
         int idx = packed & 0xFFFF;
         int shift = (face & 7) * 2;
-        return (uvRotPacked[idx] >>> shift) & 3;
+        int rot = (uvRotPacked[idx] >>> shift) & 3;
+
+        // --- FIX: top/bottom faces use a different UV basis in emitFace() ---
+        // Apply a +90° bias (or -90°) only for the problematic horizontal log states.
+        if (isLog(packed) && (face == 2 || face == 3)) {
+            int st = BlockData.state(packed) & 0xF;
+
+            boolean xAxis = (st == LOG_EAST || st == LOG_WEST);
+            boolean zAxis = (st == LOG_SOUTH || st == LOG_NORTH);
+
+            // Choose which axis is wrong:
+            if (zAxis) {
+                rot = (rot + 1) & 3;   // try +1 first (fixes 90°)
+            }
+            // If instead it’s NORTH/SOUTH that’s wrong, swap to:
+            // if (zAxis) rot = (rot + 1) & 3;
+        }
+
+        return rot;
     }
     
 }
