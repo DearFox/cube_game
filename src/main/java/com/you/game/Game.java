@@ -38,6 +38,7 @@ import com.you.sound.BlockSoundRegistry;
 import com.you.sound.FootstepSystem;
 import com.you.sound.SoundManager;
 import com.you.sound.SoundMaterial;
+import com.you.world.BlockData;
 import com.you.world.Blocks;
 import com.you.world.Lighting;
 import com.you.world.Mesher;
@@ -294,37 +295,46 @@ public class Game {
 
 		            return; // IMPORTANT: don't fall through and place again
 		        }
-		     // --- LOG SPECIAL PLACEMENT (NEW) ---
+		     // --- LOG SPECIAL PLACEMENT (NEW: 6-direction states) ---
 		        if (Blocks.isLog(place)) {
 
-		            int axis = Blocks.LOG_AXIS_Y; // default
+		            int logState = Blocks.LOG_UP; // default
 
 		            if (!replacing) {
 		                int dx = px - hx;
 		                int dy = py - hy;
 		                int dz = pz - hz;
 
-		                // dx/dy/dz tells us which face we placed against -> axis matches that face normal
-		                if (dx != 0) axis = Blocks.LOG_AXIS_X;
-		                else if (dz != 0) axis = Blocks.LOG_AXIS_Z;
-		                else axis = Blocks.LOG_AXIS_Y; // dy != 0
+		                // Choose a direction based on which face we placed against
+		                if (dx == 1 && dy == 0 && dz == 0)       logState = Blocks.LOG_EAST;   // +X
+		                else if (dx == -1 && dy == 0 && dz == 0) logState = Blocks.LOG_WEST;   // -X
+		                else if (dz == 1 && dy == 0 && dx == 0)  logState = Blocks.LOG_SOUTH;  // +Z
+		                else if (dz == -1 && dy == 0 && dx == 0) logState = Blocks.LOG_NORTH;  // -Z
+		                else if (dy == 1 && dx == 0 && dz == 0)  logState = Blocks.LOG_UP;     // +Y
+		                else if (dy == -1 && dx == 0 && dz == 0) logState = Blocks.LOG_DOWN;   // -Y
+		                else                                      logState = Blocks.LOG_UP;
 		            } else {
-		                // When replacing (e.g. grass), px==hx etc so we can't infer the face from dx/dy/dz.
-		                // Fallback: choose dominant axis from camera forward (feels good in practice).
+		                // Replacing: infer from camera forward
 		                var f = camera.getForward();
 		                float ax = Math.abs(f.x), ay = Math.abs(f.y), az = Math.abs(f.z);
-		                if (ax >= ay && ax >= az) axis = Blocks.LOG_AXIS_X;
-		                else if (az >= ax && az >= ay) axis = Blocks.LOG_AXIS_Z;
-		                else axis = Blocks.LOG_AXIS_Y;
+
+		                if (ax >= ay && ax >= az) {
+		                    logState = (f.x >= 0) ? Blocks.LOG_EAST : Blocks.LOG_WEST;
+		                } else if (az >= ax && az >= ay) {
+		                    logState = (f.z >= 0) ? Blocks.LOG_SOUTH : Blocks.LOG_NORTH;
+		                } else {
+		                    logState = (f.y >= 0) ? Blocks.LOG_UP : Blocks.LOG_DOWN;
+		                }
 		            }
 
-		            short packedLog = Blocks.withLogAxis(place, axis);
+		            // Apply state bits; do NOT touch plant code below
+		            short packedLog = BlockData.withState(place, logState);
 
 		            short old = world.placeBlockReturningOld(tx, ty, tz, packedLog);
 		            lighting.onBlockChanged(world, tx, ty, tz, old, packedLog);
 		            world.markDirtyAtBlock(tx, ty, tz);
 
-		            return;
+		            return; // IMPORTANT: do not fall through
 		        }
 
 		        // --- Existing plant placement restriction (unchanged) ---

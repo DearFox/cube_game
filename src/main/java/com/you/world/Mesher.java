@@ -245,6 +245,19 @@ public class Mesher {
 			p0v = v0;
 		}
 		}
+		// after you fill p0u/p0v...p3u/p3v according to face:
+		float[] U = new float[] { p0u, p1u, p2u, p3u };
+		float[] V = new float[] { p0v, p1v, p2v, p3v };
+
+		// NEW: ask Blocks for per-packed per-face rotation
+		int rot = Blocks.uvRot(blockPacked, face); // 0..3
+		rotateUVQuad(rot, U, V);
+
+		// write back
+		p0u = U[0]; p0v = V[0];
+		p1u = U[1]; p1v = V[1];
+		p2u = U[2]; p2v = V[2];
+		p3u = U[3]; p3v = V[3];
 
 		push(out, p0, nx, ny, nz, p0u, p0v, light01);
 		push(out, p2, nx, ny, nz, p2u, p2v, light01);
@@ -861,6 +874,39 @@ public class Mesher {
 	        push(out, p0, -nx, -ny, -nz, p0u, p0v, light01);
 	        push(out, p2, -nx, -ny, -nz, p2u, p2v, light01);
 	        push(out, p3, -nx, -ny, -nz, p3u, p3v, light01);
+	    }
+	}
+
+	// rot: 0,1,2,3 meaning 0,90,180,270 degrees clockwise in UV space
+	private static void rotateUVQuad(int rot,
+	        float[] u, float[] v) {
+	    rot &= 3;
+	    if (rot == 0) return;
+
+	    // u/v arrays are 4 corners in order: p0, p1, p2, p3
+	    // rotate by permuting corners
+	    float u0 = u[0], u1 = u[1], u2 = u[2], u3 = u[3];
+	    float v0 = v[0], v1 = v[1], v2 = v[2], v3 = v[3];
+
+	    switch (rot) {
+	        case 1 -> { // 90 CW: p0<-p3, p1<-p0, p2<-p1, p3<-p2
+	            u[0]=u3; v[0]=v3;
+	            u[1]=u0; v[1]=v0;
+	            u[2]=u1; v[2]=v1;
+	            u[3]=u2; v[3]=v2;
+	        }
+	        case 2 -> { // 180
+	            u[0]=u2; v[0]=v2;
+	            u[1]=u3; v[1]=v3;
+	            u[2]=u0; v[2]=v0;
+	            u[3]=u1; v[3]=v1;
+	        }
+	        case 3 -> { // 270 CW
+	            u[0]=u1; v[0]=v1;
+	            u[1]=u2; v[1]=v2;
+	            u[2]=u3; v[2]=v3;
+	            u[3]=u0; v[3]=v0;
+	        }
 	    }
 	}
 

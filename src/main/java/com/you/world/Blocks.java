@@ -65,9 +65,15 @@ public class Blocks {
     public static final int TORCH_NORTH = 3; // wall is -Z, torch leans +Z
     public static final int TORCH_SOUTH = 4; // wall is +Z, torch leans -Z
     //log axes
-    public static final int LOG_AXIS_Y = 0;
-    public static final int LOG_AXIS_X = 1;
-    public static final int LOG_AXIS_Z = 2;
+    public static final int LOG_UP    = 0; // +Y
+    public static final int LOG_DOWN  = 1; // -Y
+    public static final int LOG_EAST  = 2; // +X
+    public static final int LOG_WEST  = 3; // -X
+    public static final int LOG_SOUTH = 4; // +Z  (match your coordinate convention)
+    public static final int LOG_NORTH = 5; // -Z
+ // 2 bits per face (6 faces) => 12 bits total fits in a short.
+ // Layout: rot for face i stored at (i*2)
+ private static final short[] uvRotPacked = new short[1 << 16];
 
     // Return the BlockType for a packed short (or null if unknown)
     public static BlockType get(short packed) {
@@ -83,6 +89,16 @@ public class Blocks {
     public static BlockType getKind(int kind) {
         if (kind < 0 || kind >= MAX_KINDS) return null;
         return byKind[kind];
+    }
+    
+    private static void register(BlockType t) {
+        int k = t.id();
+        if (k < 0 || k >= MAX_KINDS) throw new IllegalArgumentException("Block kind out of range: " + k);
+        byKind[k] = t;
+    }
+    
+    private static void registerPacked(short packed, BlockType t) {
+        byPacked[packed & 0xFFFF] = t;
     }
 
     public static void initDefaults() {
@@ -239,48 +255,64 @@ public class Blocks {
         // Packed base for this kind (state will be overwritten)
         short baseLog = BlockData.pack(LOG_OAK_KIND, 0);
 
-        // State 0: Y axis (ends on +/-Y)
-        registerPacked(withLogAxis(baseLog, LOG_AXIS_Y),
-                new BlockType(LOG_OAK_KIND, "log_y", true,
-                        logSide[0], logSide[1],   // +X
-                        logSide[0], logSide[1],   // -X
-                        logEnd[0],  logEnd[1],    // +Y end
-                        logEnd[0],  logEnd[1],    // -Y end
-                        logSide[0], logSide[1],   // +Z
-                        logSide[0], logSide[1]    // -Z
-                ));
+        BlockType logY = new BlockType(LOG_OAK_KIND, "log_y", true,
+                logSide[0], logSide[1],  logSide[0], logSide[1],
+                logEnd[0],  logEnd[1],   logEnd[0],  logEnd[1],
+                logSide[0], logSide[1],  logSide[0], logSide[1]);
 
-        // State 1: X axis (ends on +/-X)
-        registerPacked(withLogAxis(baseLog, LOG_AXIS_X),
-                new BlockType(LOG_OAK_KIND, "log_x", true,
-                        logEnd[0],  logEnd[1],    // +X end
-                        logEnd[0],  logEnd[1],    // -X end
-                        logSide[0], logSide[1],   // +Y
-                        logSide[0], logSide[1],   // -Y
-                        logSide[0], logSide[1],   // +Z
-                        logSide[0], logSide[1]    // -Z
-                ));
+        BlockType logX = new BlockType(LOG_OAK_KIND, "log_x", true,
+                logEnd[0],  logEnd[1],   logEnd[0],  logEnd[1],
+                logSide[0], logSide[1],  logSide[0], logSide[1],
+                logSide[0], logSide[1],  logSide[0], logSide[1]);
 
-        // State 2: Z axis (ends on +/-Z)
-        registerPacked(withLogAxis(baseLog, LOG_AXIS_Z),
-                new BlockType(LOG_OAK_KIND, "log_z", true,
-                        logSide[0], logSide[1],   // +X
-                        logSide[0], logSide[1],   // -X
-                        logSide[0], logSide[1],   // +Y
-                        logSide[0], logSide[1],   // -Y
-                        logEnd[0],  logEnd[1],    // +Z end
-                        logEnd[0],  logEnd[1]     // -Z end
-                ));
-    }
+        BlockType logZ = new BlockType(LOG_OAK_KIND, "log_z", true,
+                logSide[0], logSide[1],  logSide[0], logSide[1],
+                logSide[0], logSide[1],  logSide[0], logSide[1],
+                logEnd[0],  logEnd[1],   logEnd[0],  logEnd[1]);
+        
+        short pUp    = BlockData.withState(baseLog, LOG_UP);
+        short pDown  = BlockData.withState(baseLog, LOG_DOWN);
+        short pEast  = BlockData.withState(baseLog, LOG_EAST);
+        short pWest  = BlockData.withState(baseLog, LOG_WEST);
+        short pSouth = BlockData.withState(baseLog, LOG_SOUTH);
+        short pNorth = BlockData.withState(baseLog, LOG_NORTH);
 
-    private static void register(BlockType t) {
-        int k = t.id();
-        if (k < 0 || k >= MAX_KINDS) throw new IllegalArgumentException("Block kind out of range: " + k);
-        byKind[k] = t;
-    }
-    
-    private static void registerPacked(short packed, BlockType t) {
-        byPacked[packed & 0xFFFF] = t;
+        registerPacked(pUp,    logY);
+        registerPacked(pDown,  logY);
+
+        registerPacked(pEast,  logX);
+        registerPacked(pWest,  logX);
+
+        registerPacked(pSouth, logZ);
+        registerPacked(pNorth, logZ);
+        
+     // faces: 0=+X,1=-X,2=+Y,3=-Y,4=+Z,5=-Z
+
+     // helper: apply same rot to all faces except the two end faces
+     java.util.function.BiConsumer<Short, int[]> apply = (packed, rots) -> {
+         for (int f = 0; f < 6; f++) setUvRot(packed, f, rots[f]);
+     };
+
+     // LOG_UP (axis Y): sides 0/1/4/5 rot 0
+     apply.accept(pUp,   new int[]{0,0,0,0,0,0});
+
+     // LOG_DOWN: flip bark on the sides (180)
+     apply.accept(pDown, new int[]{2,2,0,0,2,2});
+
+     // LOG_EAST (+X): ends are faces 0/1, rotate the other four faces so bark points +X
+     apply.accept(pEast, new int[]{0,0,1,3,1,3});
+
+     // LOG_WEST (-X): flip from EAST
+     apply.accept(pWest, new int[]{0,0,3,1,3,1});
+     
+
+     // LOG_SOUTH (+Z): ends are faces 4/5, rotate the other four faces so bark points +Z
+     apply.accept(pSouth,new int[]{1,3,1,3,0,0});
+
+     // LOG_NORTH (-Z): flip from SOUTH
+     apply.accept(pNorth,new int[]{3,1,3,1,0,0});
+
+
     }
 
  // -------- Atlas mapping (name -> tileX,tileY) --------
@@ -488,47 +520,20 @@ public class Blocks {
     public static short withLogAxis(short packed, int axis) {
         return BlockData.withState(packed, axis);
     }
+    
+    private static void setUvRot(short packed, int face, int rot) {
+        int idx = packed & 0xFFFF;
+        int shift = (face & 7) * 2;
+        int mask = 3 << shift;
+        int v = uvRotPacked[idx] & ~mask;
+        v |= (rot & 3) << shift;
+        uvRotPacked[idx] = (short) v;
+    }
 
- // face indices: 0=+X, 1=-X, 2=+Y, 3=-Y, 4=+Z, 5=-Z
-    private static BlockType makeLogType(int id, String name, boolean solid,
-                                         int axis, // Blocks.LOG_AXIS_X/Y/Z
-                                         int sideX, int sideY,
-                                         int endX,  int endY) {
-
-        // Default all faces to SIDE
-        int px = sideX, py = sideY; // +X
-        int nx = sideX, ny = sideY; // -X
-        int ux = sideX, uy = sideY; // +Y
-        int dx = sideX, dy = sideY; // -Y
-        int fzx = sideX, fzy = sideY; // +Z
-        int bzx = sideX, bzy = sideY; // -Z
-
-        // Overwrite the two "end" faces based on axis
-        switch (axis) {
-            case LOG_AXIS_X -> { // ends on +/-X
-                px = endX; py = endY;
-                nx = endX; ny = endY;
-            }
-            case LOG_AXIS_Y -> { // ends on +/-Y
-                ux = endX; uy = endY;
-                dx = endX; dy = endY;
-            }
-            case LOG_AXIS_Z -> { // ends on +/-Z
-                fzx = endX; fzy = endY;
-                bzx = endX; bzy = endY;
-            }
-            default -> throw new IllegalArgumentException("bad log axis " + axis);
-        }
-
-        return new BlockType(
-                id, name, solid,
-                px, py,
-                nx, ny,
-                ux, uy,
-                dx, dy,
-                fzx, fzy,
-                bzx, bzy
-        );
+    public static int uvRot(short packed, int face) {
+        int idx = packed & 0xFFFF;
+        int shift = (face & 7) * 2;
+        return (uvRotPacked[idx] >>> shift) & 3;
     }
     
 }
